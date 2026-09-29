@@ -41,5 +41,7 @@ justifié et noté dans la documentation du site concerné.
 - **Commits** : format [Conventional Commits](https://www.conventionalcommits.org/fr/),
   en français, un changement logique par commit (`feat:`, `fix:`, `docs:`, `chore:`…).
   Ne committer que sur demande de l'utilisateur.
+- **Vérification** : ne jamais déclarer terminée une modification de code d'un site
+  sans avoir lancé `/verifier` sur ce site et obtenu du vert.
 - **Documentation** : chaque skill, hook ou sous-agent ajouté est documenté dans
   `docs/` et la feuille de route du `README.md` est mise à jour.

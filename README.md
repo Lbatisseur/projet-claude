@@ -89,7 +89,7 @@ flowchart LR
 | 0 | Mise en place : Git, GitHub CLI, exclusion des secrets | ✅ |
 | 1 | Contexte agent : `CLAUDE.md` | ✅ |
 | 2 | Premier hook non bloquant : notifications sonores ([doc](docs/hooks.md)) | ✅ |
-| 3 | Skills : `/nouveau-site`, `/verifier`, `/livrer` | ⏳ |
+| 3 | Skills ([doc](docs/skills.md)) : `/verifier` ✅ · `/nouveau-site` · `/livrer` | 🚧 |
 | 4 | Hooks bloquants : protection des secrets, vérification avant fin de tâche | ⏳ |
 | 5 | Sous-agents : relecteur sécurité et paiement | ⏳ |
 | 6 | Serveurs MCP : navigateur, Stripe | ⏳ |
