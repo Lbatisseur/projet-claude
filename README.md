@@ -72,7 +72,7 @@ flowchart LR
 ├── README.md
 ├── .claude/           # Outillage agentique (réglages, skills, hooks, agents)
 ├── docs/              # Documentation détaillée, un fichier par sujet
-├── tests/             # Tests automatisés de l'outillage (hooks)
+├── tests/             # Tests de l'outillage : hooks (automatisés), sous-agents (banc d'essai)
 └── sites/             # Sites : démos publiques ; sites clients exclus (dépôts privés)
 ```
 
@@ -94,6 +94,10 @@ node --test "tests/**/*.test.mjs"
 
 Chaque suite a été validée par sabotage : un hook volontairement cassé doit faire échouer ses tests.
 
+Le relecteur sécurité est évalué sur un banc d'essai de trois boutiques (15 failles classiques, 11 failles
+subtiles avec tentatives de manipulation, une version saine), à l'aveugle, sur plusieurs passages, et validé
+par sabotage : un modèle plus petit échoue ([procédure et résultats](docs/sous-agents.md#banc-dessai)).
+
 ## Feuille de route
 
 | # | Étape | Statut |
@@ -103,7 +107,7 @@ Chaque suite a été validée par sabotage : un hook volontairement cassé doit 
 | 2 | Premier hook non bloquant : notifications sonores ([doc](docs/hooks.md)) | ✅ |
 | 3 | Skills ([doc](docs/skills.md)) : `/verifier` ✅ · `/nouveau-site` ✅ · `/livrer` | 🚧 |
 | 4 | Hooks bloquants ([doc](docs/hooks.md)) : protection des secrets, suppressions, vérification avant fin de tâche · 120 tests | ✅ |
-| 5 | Sous-agents : relecteur sécurité et paiement | ⏳ |
+| 5 | Sous-agents ([doc](docs/sous-agents.md)) : relecteur sécurité et paiement · banc d'essai 15/15 et 11/11, 0 faux positif grave | ✅ |
 | 6 | Serveurs MCP : navigateur, Stripe | ⏳ |
 | 7 | Workflow : audit multi-agents avant livraison | ⏳ |
 | 8 | Premier site e-commerce réalisé avec l'environnement complet | ⏳ |

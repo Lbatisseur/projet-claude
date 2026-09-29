@@ -1,0 +1,19 @@
+{
+  "name": "boutique-c",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "next": "16.3.7",
+    "postgres": "^3.4.5",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "server-only": "^0.0.1",
+    "stripe": "^18.0.0",
+    "zod": "^4.1.0"
+  }
+}

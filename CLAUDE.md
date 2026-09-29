@@ -28,6 +28,7 @@ justifié et noté dans la documentation du site concerné.
 | Dossier | Contenu |
 |---|---|
 | `.claude/` | Réglages, hooks, skills et sous-agents du projet |
+| `tests/` | Tests des hooks (`node --test`) et banc d'essai des sous-agents |
 | `docs/` | Documentation détaillée (un fichier par sujet) |
 | `sites/` | Un dossier par site, créé avec `/nouveau-site`. Sites clients : dépôt git privé propre, exclus du dépôt public. Sites `demo-*` : fictifs, publics |
 
@@ -47,5 +48,8 @@ justifié et noté dans la documentation du site concerné.
   Ne committer que sur demande de l'utilisateur.
 - **Vérification** : ne jamais déclarer terminée une modification de code d'un site
   sans avoir lancé `/verifier` sur ce site et obtenu du vert.
+- **Sécurité** : toute modification touchant au paiement, aux routes API, aux Server
+  Actions, aux formulaires, à l'authentification ou aux secrets est relue par le
+  sous-agent `relecteur-securite` ; corriger les constats 🔴 et 🟠 avant de conclure.
 - **Documentation** : chaque skill, hook ou sous-agent ajouté est documenté dans
   `docs/` et la feuille de route du `README.md` est mise à jour.
