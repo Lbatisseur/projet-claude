@@ -81,6 +81,10 @@ Les tests ont révélé quatre défauts, tous corrigés :
 3. **Blocage infini** sur un test en mode surveillance : ajout d'une limite de temps
    qui tue tout le groupe de processus.
 4. **Messages illisibles** sur un projet mal installé : ajout de contrôles préalables.
+5. **Chemin du script vide au premier vrai lancement de `/verifier`** : le `SKILL.md`
+   utilisait `$CLAUDE_PROJECT_DIR`, qui n'est définie que pour les hooks. Les tests
+   appelaient le script directement et ne pouvaient pas le voir : un skill se teste
+   aussi en le lançant réellement depuis Claude Code.
 
 ### À venir
 

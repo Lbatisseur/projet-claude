@@ -17,9 +17,16 @@ d'interpréter le résultat, de corriger ce qui doit l'être et d'en rendre comp
 
 ## 2. Lancer le script
 
+Le script est `scripts/verify.sh`, dans le dossier de ce skill (chemin absolu
+indiqué au chargement : « Base directory for this skill »). Appelle-le par ce
+chemin absolu, entre guillemets : il contient un espace.
+
 ```bash
-"$CLAUDE_PROJECT_DIR"/.claude/skills/verifier/scripts/verify.sh <dossier-du-site>
+"<dossier-du-skill>/scripts/verify.sh" <dossier-du-site>
 ```
+
+N'utilise pas `$CLAUDE_PROJECT_DIR` : cette variable n'existe que pour les hooks,
+elle est vide dans le terminal de l'agent.
 
 Il exécute, dans cet ordre, les scripts npm du site : `format:check`, `lint`,
 `typecheck`, `test`, `build`. Chaque étape est limitée à 600 s (variable
