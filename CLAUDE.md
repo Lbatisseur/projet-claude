@@ -38,7 +38,10 @@ justifié et noté dans la documentation du site concerné.
   Pour annuler des modifications git : `git stash`, jamais `reset --hard`,
   `checkout --`, `restore` ni `clean` (un hook global bloque ces commandes).
 - **Secrets** : ne jamais lire, écrire ni committer de fichier `.env`. Documenter
-  les variables nécessaires dans `.env.example`, sans valeurs réelles.
+  les variables nécessaires dans `.env.example`, sans valeurs réelles (un hook
+  bloque tout accès aux secrets).
+- **Outillage** : après toute modification d'un hook, lancer
+  `node --test "tests/**/*.test.mjs"` et compléter les tests.
 - **Commits** : format [Conventional Commits](https://www.conventionalcommits.org/fr/),
   en français, un changement logique par commit (`feat:`, `fix:`, `docs:`, `chore:`…).
   Ne committer que sur demande de l'utilisateur.

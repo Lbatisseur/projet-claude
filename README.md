@@ -22,6 +22,7 @@
 - [Principes](#principes)
 - [Structure du dépôt](#structure-du-dépôt)
 - [Prérequis](#prérequis)
+- [Tests](#tests)
 - [Feuille de route](#feuille-de-route)
 
 ## Pourquoi ce projet
@@ -71,6 +72,7 @@ flowchart LR
 ├── README.md
 ├── .claude/           # Outillage agentique (réglages, skills, hooks, agents)
 ├── docs/              # Documentation détaillée, un fichier par sujet
+├── tests/             # Tests automatisés de l'outillage (hooks)
 └── sites/             # Sites : démos publiques ; sites clients exclus (dépôts privés)
 ```
 
@@ -82,6 +84,16 @@ flowchart LR
 | [Node.js](https://nodejs.org) | ≥ 20 | Exécution des sites Next.js |
 | [Git](https://git-scm.com) + [GitHub CLI](https://cli.github.com) | — | Versionnement et publication |
 
+## Tests
+
+Les garde-fous sont eux-mêmes testés : 120 tests automatisés, sans dépendance à installer.
+
+```bash
+node --test "tests/**/*.test.mjs"
+```
+
+Chaque suite a été validée par sabotage : un hook volontairement cassé doit faire échouer ses tests.
+
 ## Feuille de route
 
 | # | Étape | Statut |
@@ -90,7 +102,7 @@ flowchart LR
 | 1 | Contexte agent : `CLAUDE.md` | ✅ |
 | 2 | Premier hook non bloquant : notifications sonores ([doc](docs/hooks.md)) | ✅ |
 | 3 | Skills ([doc](docs/skills.md)) : `/verifier` ✅ · `/nouveau-site` ✅ · `/livrer` | 🚧 |
-| 4 | Hooks bloquants : protection des secrets, vérification avant fin de tâche | ⏳ |
+| 4 | Hooks bloquants ([doc](docs/hooks.md)) : protection des secrets, suppressions, vérification avant fin de tâche · 120 tests | ✅ |
 | 5 | Sous-agents : relecteur sécurité et paiement | ⏳ |
 | 6 | Serveurs MCP : navigateur, Stripe | ⏳ |
 | 7 | Workflow : audit multi-agents avant livraison | ⏳ |

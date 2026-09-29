@@ -105,6 +105,12 @@ printf '%s' "$report"
 echo
 if [ $failed -eq 0 ]; then
   echo "RÉSULTAT : tout est vert."
+  # Tampon lu par le hook Stop (require-verification) : ce site est vérifié à cette date.
+  # Seulement pour les sites du dépôt (sites/<identifiant>).
+  root="$(git -C "$(dirname "$0")" rev-parse --show-toplevel 2>/dev/null)"
+  if [ -n "$root" ] && [ "$(dirname "$(pwd)")" = "$root/sites" ]; then
+    mkdir -p "$root/.claude/state/verifier" && touch "$root/.claude/state/verifier/$(basename "$(pwd)").ok"
+  fi
 else
   echo "RÉSULTAT : échec."
   for log in "${failed_logs[@]}"; do

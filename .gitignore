@@ -19,3 +19,6 @@ dist/
 # Seuls les sites de démonstration (demo-*) sont publics.
 /sites/*
 !/sites/demo-*/
+
+# État local des hooks (tampons de vérification…)
+/.claude/state/
