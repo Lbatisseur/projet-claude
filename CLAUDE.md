@@ -29,7 +29,7 @@ justifié et noté dans la documentation du site concerné.
 |---|---|
 | `.claude/` | Réglages, hooks, skills et sous-agents du projet |
 | `docs/` | Documentation détaillée (un fichier par sujet) |
-| `sites/` | Un dossier par site client (à venir) |
+| `sites/` | Un dossier par site, créé avec `/nouveau-site`. Sites clients : dépôt git privé propre, exclus du dépôt public. Sites `demo-*` : fictifs, publics |
 
 ## Règles
 

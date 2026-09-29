@@ -86,7 +86,46 @@ Les tests ont révélé quatre défauts, tous corrigés :
    appelaient le script directement et ne pouvaient pas le voir : un skill se teste
    aussi en le lançant réellement depuis Claude Code.
 
+### `/nouveau-site`
+
+Crée la base d'un site : outillage complet, fiche du client, dépôt git, puis
+vérification au vert. Les fonctionnalités e-commerce viennent ensuite, avec leurs
+propres skills : chaque skill reste petit, testable, et un client n'embarque que
+ce dont il a besoin.
+
+- Fichiers : [`SKILL.md`](../.claude/skills/nouveau-site/SKILL.md),
+  [`scripts/scaffold.sh`](../.claude/skills/nouveau-site/scripts/scaffold.sh),
+  [`templates/`](../.claude/skills/nouveau-site/templates/)
+- Usage : `/nouveau-site Boulangerie Martin`
+
+**Ce que le script produit dans `sites/<identifiant>/`** :
+
+| Élément | Détail |
+|---|---|
+| Projet Next.js 16 | TypeScript, Tailwind, ESLint, App Router, `src/` (version majeure figée : créations reproductibles) |
+| Outils de qualité | Prettier (+ tri des classes Tailwind), Vitest, les 5 scripts exigés par `/verifier` |
+| `CLAUDE.md` | Fiche du site : client, identité visuelle, écarts de stack justifiés, journal des décisions. Importe `AGENTS.md`, fourni par Next.js, qui renvoie l'agent vers la documentation de la version installée |
+| `src/lib/site.ts` | Nom et description du site, en un seul endroit |
+| `src/lib/prix.ts` | Formatage des prix en **centimes entiers** (`0.1 + 0.2 !== 0.3`), avec ses tests |
+| `README.md`, `.env.example` | Documentation remise au client ; variables documentées sans valeurs |
+
+**Sites clients et confidentialité** : le dépôt d'outillage est public, le code
+d'un client lui appartient. `sites/` est donc exclu du dépôt public ; chaque site
+client a son propre dépôt git, publié en **privé** sur GitHub (transférable au
+client à la livraison). Seuls les sites de démonstration fictifs (`demo-*`) sont
+versionnés publiquement.
+
+**Tests** :
+
+| Scénario | Résultat |
+|---|---|
+| 8 entrées invalides (majuscules, espaces, tirets en trop, `../../evil`, nom vide, dossier existant) | Refusées, message clair, code 2 |
+| Nom piégé (`L'Atelier "Chez Zoé" & Fils`) et description avec `{{NOM}}`, `$HOME`, `` `whoami` `` | Échappés correctement, rien d'exécuté ni de substitué |
+| Site démo | Visible par le dépôt public, `/verifier` vert |
+| Site client | Dépôt git propre avec un commit, invisible du dépôt public, `.env.example` versionné, `/verifier` vert |
+| Lancement réel du skill (`/nouveau-site` puis `/verifier`) | Site `demo-maison-lumen` créé et vert en moins d'une minute |
+
 ### À venir
 
-- `/nouveau-site` : créer un site client complet à partir de la stack par défaut
 - `/livrer` : préparer la mise en ligne et la livraison au client
+- Fonctionnalités e-commerce : catalogue, panier, paiement Stripe
