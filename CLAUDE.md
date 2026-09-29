@@ -35,7 +35,8 @@ justifié et noté dans la documentation du site concerné.
 
 - **Suppressions** : jamais de `rm`. Toujours la Corbeille macOS :
   `osascript -e 'tell application "Finder" to delete POSIX file "/chemin/absolu"'`
-  (un hook global bloque les suppressions définitives).
+  Pour annuler des modifications git : `git stash`, jamais `reset --hard`,
+  `checkout --`, `restore` ni `clean` (un hook global bloque ces commandes).
 - **Secrets** : ne jamais lire, écrire ni committer de fichier `.env`. Documenter
   les variables nécessaires dans `.env.example`, sans valeurs réelles.
 - **Commits** : format [Conventional Commits](https://www.conventionalcommits.org/fr/),

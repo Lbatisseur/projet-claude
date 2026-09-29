@@ -35,10 +35,34 @@ bloquante que lorsqu'une consigne n'a pas suffi.
 
 ### Suppression via la Corbeille (bloquant, global)
 
-Configuré dans les réglages utilisateur (`~/.claude/settings.json`), donc hors du dépôt.
-Un hook `PreToolUse` sur l'outil `Bash` refuse `rm`, `rmdir`, `unlink`, `shred`, `srm`
-et `find -delete`, et indique à l'agent d'utiliser la Corbeille macOS à la place.
-Il sera versionné dans le projet à l'étape 4.
+Configuré dans les réglages utilisateur (`~/.claude/settings.json`), donc hors du dépôt
+pour l'instant ; il sera versionné dans le projet à l'étape 4.
+
+Un hook `PreToolUse` sur l'outil `Bash` refuse, avec la raison et une alternative :
+
+| Catégorie | Commandes bloquées |
+|---|---|
+| Suppression directe | `rm`, `rmdir`, `unlink`, `shred`, `srm`, `find -delete`, `git rm` |
+| Git destructif | `git clean`, `git reset --hard`, `git checkout -- <fichiers>`, `git restore <fichiers>` |
+| Autres langages | `os.remove`, `shutil.rmtree`, `Path.unlink` (Python), `fs.rm`, `fs.unlink` (Node) |
+| Divers | `rsync --delete`, `truncate` |
+
+- **Pourquoi** : une suppression par `rm` ou un `git reset --hard` est définitive.
+  Avec la Corbeille ou `git stash`, une erreur de l'agent reste réparable.
+- **Robustesse** : une entrée vide ou un JSON invalide ne bloque rien (code `0`) :
+  un garde-fou ne doit jamais casser la session.
+- **Testé** sur 35 commandes à bloquer et 23 commandes légitimes (`git checkout main`,
+  `git reset --soft`, classe Tailwind `truncate`…) : 35/35 bloquées, 23/23 autorisées.
+
+**Limites assumées.** La détection se fait par motifs sur le texte de la commande :
+
+- une commande **volontairement camouflée** (`r""m`, `$(echo rm)`) passe : ce hook
+  protège des erreurs, pas d'un agent malveillant ;
+- la **réécriture par redirection** (`> fichier`) passe : la bloquer empêcherait de
+  créer des fichiers ;
+- une option placée avant la sous-commande git (`git -C dossier clean`) passe ;
+- à l'inverse, un mot interdit présent dans du texte (heredoc, `echo`) bloque la
+  commande : écrire ce texte avec l'outil d'écriture de fichiers plutôt qu'en shell.
 
 ## Gérer les hooks
 
