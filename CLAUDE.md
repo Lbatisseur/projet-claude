@@ -15,10 +15,13 @@ rapidement des **sites e-commerce sur mesure** pour des clients.
 
 ## Stack des sites clients
 
+Stack **par défaut**, à adapter aux besoins de chaque client. Tout écart est
+justifié et noté dans la documentation du site concerné.
+
 - **Next.js** (App Router) + **TypeScript** (mode strict)
 - **Tailwind CSS** pour le style
 - **Stripe** pour le paiement
-- Base de données : à décider au premier site
+- Base de données : choisie selon le site
 
 ## Organisation du dépôt
 

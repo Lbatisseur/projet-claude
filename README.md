@@ -61,6 +61,7 @@ flowchart LR
 - **Protéger l'irréversible.** Les garde-fous portent sur les écritures, les suppressions et les secrets, pas sur la lecture.
 - **Aucune perte de données.** Toute suppression passe par la Corbeille ; les suppressions définitives sont bloquées.
 - **Aucun secret versionné.** Les fichiers `.env` sont exclus de Git et inaccessibles à l'agent.
+- **Stack adaptée au besoin.** Next.js, TypeScript, Tailwind et Stripe forment la base par défaut ; chaque site peut s'en écarter, avec une justification documentée.
 
 ## Structure du dépôt
 
