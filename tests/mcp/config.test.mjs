@@ -1,5 +1,5 @@
 // Tests de la configuration MCP : node --test tests/
-// Ils protègent les réglages de sécurité du navigateur contre une modification
+// Ils protègent les réglages de sécurité des serveurs MCP contre une modification
 // involontaire (voir docs/mcp.md).
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -33,11 +33,47 @@ describe("MCP navigateur (Playwright)", () => {
   test("outil d'exécution de code arbitraire interdit", () => {
     assert.ok(settings.permissions.deny.includes("mcp__playwright__browser_run_code_unsafe"));
   });
+});
 
-  test("le hook de protection des secrets couvre les outils MCP", () => {
+describe("MCP Stripe", () => {
+  const stripe = mcp.mcpServers.stripe;
+
+  test("serveur officiel, en HTTPS", () => {
+    assert.equal(stripe.type, "http");
+    assert.equal(new URL(stripe.url).origin, "https://mcp.stripe.com");
+  });
+
+  test("connexion OAuth : aucune clé ni en-tête d'authentification dans le dépôt", () => {
+    assert.equal(stripe.headers, undefined);
+    assert.doesNotMatch(JSON.stringify(mcp), /sk_|rk_|Bearer|Authorization/i);
+  });
+
+  test("toute écriture dans Stripe demande l'accord de l'utilisateur", () => {
+    assert.ok(settings.permissions.ask.includes("mcp__stripe__stripe_api_write"));
+    assert.ok(!settings.permissions.allow?.some((r) => r.startsWith("mcp__stripe")));
+  });
+
+  test("hook stripe-test-only actif sur tous les outils Stripe", () => {
+    const entry = settings.hooks.PreToolUse.find((h) =>
+      h.hooks.some((x) => x.command.includes("stripe-test-only")),
+    );
+    assert.ok(new RegExp(`^(${entry.matcher})$`).test("mcp__stripe__stripe_api_write"));
+    assert.ok(new RegExp(`^(${entry.matcher})$`).test("mcp__stripe__stripe_api_read"));
+  });
+
+  test("envoi de messages à Stripe au nom du compte interdit", () => {
+    assert.ok(settings.permissions.deny.includes("mcp__stripe__send_stripe_feedback"));
+  });
+});
+
+describe("Garde-fous communs", () => {
+  test("le hook de protection des secrets couvre les outils de tous les serveurs MCP", () => {
     const entry = settings.hooks.PreToolUse.find((h) =>
       h.hooks.some((x) => x.command.includes("protect-secrets")),
     );
-    assert.ok(new RegExp(`^(${entry.matcher})$`).test("mcp__playwright__browser_file_upload"));
+    const matcher = new RegExp(`^(${entry.matcher})$`);
+    for (const server of Object.keys(mcp.mcpServers)) {
+      assert.ok(matcher.test(`mcp__${server}__outil`), server);
+    }
   });
 });

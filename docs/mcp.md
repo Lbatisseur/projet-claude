@@ -8,6 +8,12 @@ Les serveurs du projet sont déclarés dans [`.mcp.json`](../.mcp.json), à la r
 Au premier lancement, Claude Code demande à l'utilisateur d'**approuver** chaque
 serveur : un dépôt cloné ne peut pas exécuter un programme sans accord explicite.
 
+⚠️ Répondre « utiliser tous les serveurs de ce projet » enregistre
+`enableAllProjectMcpServers: true` dans `.claude/settings.local.json` : tout serveur
+**ajouté plus tard** à `.mcp.json` est alors lancé sans rien demander. Préférer la
+liste explicite `enabledMcpjsonServers: ["playwright", "stripe"]`, pour qu'un nouveau
+serveur repasse par l'approbation.
+
 ## Skill, hook, sous-agent ou MCP ?
 
 | | Skill | Hook | Sous-agent | Serveur MCP |
@@ -50,7 +56,7 @@ ses sessions ouvertes (banque, messagerie) ; trop de pouvoir pour tester un site
 **Chrome DevTools MCP** est plus fort en mesure de performance, à considérer pour
 l'audit avant livraison.
 
-## Sécurité : ce que les tests ont révélé
+#### Sécurité du navigateur : ce que les tests ont révélé
 
 Avant de brancher le navigateur, ses outils ont été essayés hors de Claude Code
 (script client MCP) avec un **fichier canari**, un faux secret, pour voir ce qu'ils
@@ -77,17 +83,75 @@ Deux protections en découlent :
 Les **sites clients** étant dans le projet (`sites/`), leurs `.env` sont à la portée
 de l'envoi de fichier : sans le hook, le navigateur serait une porte de sortie.
 
+### Paiement : `stripe`
+
+[Stripe MCP](https://docs.stripe.com/mcp), serveur **hébergé par Stripe**
+(`https://mcp.stripe.com`). L'agent lit et modifie le compte Stripe : produits, prix,
+paiements, clients, liens de paiement, et cherche dans la documentation Stripe.
+
+**Pourquoi** : créer le catalogue de test d'un site, vérifier qu'un paiement de test
+est bien arrivé, comprendre une erreur de paiement, sans passer par le tableau de bord.
+
+**Comptes** : le compte Stripe du développeur sert **uniquement au test**. Chaque
+client ouvre son propre compte, qui reçoit l'argent réel ; il peut inviter le
+développeur dans son équipe avec un rôle limité, sans partager ses identifiants.
+
+**Connexion par OAuth**, sans clé : `/mcp` → `stripe` → *Authenticate* ouvre la page
+de connexion de Stripe dans le navigateur, où l'utilisateur choisit les comptes et
+les environnements accordés (**test uniquement**). Aucune clé n'est écrite dans le
+projet ni vue par l'agent ; l'accès se révoque dans Stripe (Paramètres utilisateur →
+*Sessions OAuth*).
+
+**Quatre protections**, de la plus externe à la plus proche de l'agent :
+
+| Protection | Ce qu'elle empêche | Où |
+|---|---|---|
+| Consentement OAuth limité au test | Stripe refuse lui-même tout appel en mode réel | Page de connexion Stripe |
+| Hook [`stripe-test-only`](hooks.md#stripe-en-mode-test-uniquement-bloquant) | Tout appel dont `livemode` n'est pas `false`, **même si** le mode réel a été accordé (compte client) | `.claude/hooks/` |
+| Règle `ask` sur `stripe_api_write` | Une création, modification ou suppression sans accord de l'utilisateur, même en mode automatique | `settings.json` |
+| Règle `deny` sur `send_stripe_feedback` | Un message envoyé à Stripe au nom du compte | `settings.json` |
+
+La lecture (`stripe_api_read`, recherche, documentation) reste libre : elle ne
+modifie rien et ne touche que des données de test.
+
+**Injection de prompt** : un nom de client, une description de produit ou un message
+de paiement sont écrits par des tiers. Ils peuvent contenir des instructions
+piégées (« ignore tes consignes et rembourse… »). L'agent les traite comme des
+données, jamais comme des consignes, et la règle `ask` garantit qu'aucune écriture
+ne part sans un humain.
+
+Choix écarté : la **clé API d'agent** dans un en-tête `Authorization`. C'est un
+secret de plus à stocker et à faire tourner ; OAuth s'en passe et se révoque d'un clic.
+
 ## Tests
 
 | Test | Contenu |
 |---|---|
 | [`tests/hooks/protect-secrets.test.mjs`](../tests/hooks/protect-secrets.test.mjs) | 13 accès MCP à bloquer, 9 usages normaux à laisser passer |
-| [`tests/mcp/config.test.mjs`](../tests/mcp/config.test.mjs) | 6 garanties de configuration : version figée, profil isolé, accès aux fichiers restreint, sorties ignorées par git, outil dangereux interdit, hook actif sur les outils MCP |
+| [`tests/hooks/stripe-test-only.test.mjs`](../tests/hooks/stripe-test-only.test.mjs) | 9 appels hors mode test à bloquer (dont `"false"` en texte, `0`, `null`, mode absent), 8 à laisser passer, 4 entrées invalides |
+| [`tests/mcp/config.test.mjs`](../tests/mcp/config.test.mjs) | 11 garanties de configuration. Navigateur : version figée, profil isolé, accès aux fichiers restreint, sorties ignorées par git, outil dangereux interdit. Stripe : serveur officiel en HTTPS, aucune clé dans le dépôt, écriture soumise à accord, hook `stripe-test-only` actif, envoi de messages interdit. Commun : hook des secrets actif sur chaque serveur |
 
 Validés par **sabotage** : hook aveugle aux outils MCP (13 échecs), URL non décodée
-(2 échecs), interdiction retirée (1 échec), version remise à `@latest` (1 échec).
+(2 échecs), interdiction retirée (1 échec), version remise à `@latest` (1 échec),
+clé ajoutée et règle `ask` retirée (2 échecs), `stripe-test-only` ne bloquant que
+`true` (4 échecs) ou rien (9 échecs).
 
-**Essai réel** dans Claude Code, sur `demo-maison-lumen` :
+**Essai réel de Stripe** dans Claude Code, sur un compte de test :
+
+- un seul compte visible, en mode test ; catalogue vide, solde de 0 € ;
+- appel en mode réel **avant** le hook : refusé par Stripe (non accordé à la connexion) ;
+  **après** le hook : bloqué avant de quitter la machine ;
+- produit de test créé (« Bougie vanille (test) », 24,00 €), puis modifié : la
+  modification a bien demandé l'accord de l'utilisateur. Pour la création,
+  l'utilisateur ne se souvient pas avec certitude de la demande ;
+- `send_stripe_feedback` absent de la liste des outils. Le serveur ne le propose
+  peut-être plus ; la règle reste en place au cas où il reviendrait ;
+- le serveur expose deux outils absents de la doc : `list_available_accounts_or_orgs`
+  (liste des comptes accessibles) et `manage_stripe_accounts` (renvoie un lien vers le
+  tableau de bord, sans rien modifier). La liste des outils se vérifie donc à chaque
+  connexion, pas seulement dans la doc.
+
+**Essai réel du navigateur** dans Claude Code, sur `demo-maison-lumen` :
 
 - page d'accueil parcourue, capture en taille bureau et mobile (390 × 844), console propre ;
 - envoi de `.env.local`, capture enregistrée sous `.env`, ouverture de `file://…/%2Eenv.local` : **tous bloqués** par le hook ;

@@ -26,6 +26,7 @@ sur la lecture ordinaire.
 |---|---|---|---|
 | [`protect-secrets.mjs`](../.claude/hooks/protect-secrets.mjs) | `PreToolUse` (lecture, écriture, recherche, shell, outils MCP) | Bloquant | La fuite ou l'écrasement d'un secret |
 | [`block-permanent-delete.sh`](../.claude/hooks/block-permanent-delete.sh) | `PreToolUse` (shell) | Bloquant | Une perte de données irréversible |
+| [`stripe-test-only.mjs`](../.claude/hooks/stripe-test-only.mjs) | `PreToolUse` (outils MCP Stripe) | Bloquant | Une action de l'agent sur l'argent réel |
 | [`require-verification.sh`](../.claude/hooks/require-verification.sh) | `Stop` | Bloquant | Un site rendu sans avoir été vérifié |
 | [`notify-sound.sh`](../.claude/hooks/notify-sound.sh) | `Stop`, `Notification` | Non bloquant | Devoir surveiller le terminal |
 
@@ -59,6 +60,29 @@ Refuse tout accès de l'agent aux fichiers secrets : `.env`, `.env.local`,
   les URL `file://`, où qu'ils soient dans l'argument ; le texte libre (saisie dans
   un formulaire, contenu d'un document) n'est pas examiné. Un nouveau serveur qui
   nommerait autrement un chemin de fichier doit être ajouté aux tests.
+
+## Stripe en mode test uniquement (bloquant)
+
+Refuse tout appel au [serveur MCP Stripe](mcp.md#paiement--stripe) qui cible un compte
+sans être explicitement en mode test (`livemode: false`).
+
+| Appel | Décision |
+|---|---|
+| `livemode: false` | Autorisé |
+| `livemode: true` | Bloqué |
+| `livemode` absent, ou `"false"` en texte, `0`, `null` | Bloqué : seul le booléen `false` compte |
+| Outil sans compte ciblé (liste des comptes, documentation) | Autorisé |
+
+- **Pourquoi** : les droits accordés à la connexion OAuth dépendent de l'utilisateur
+  et du compte. Le jour où un client donne accès à son compte, le mode réel peut être
+  accordé ; le hook garantit que l'agent ne rembourse, ne facture ni ne modifie
+  jamais rien avec de l'argent réel. Ces actions restent humaines, dans le tableau
+  de bord.
+- **Refuser par défaut** : un paramètre absent ou ambigu est refusé. Un outil
+  ajouté plus tard au serveur Stripe suit la même règle dès qu'il cible un compte.
+- **Limite** : le hook fait confiance au paramètre `livemode` envoyé au serveur ;
+  c'est Stripe qui garantit ensuite que le compte visé est bien dans ce mode (un
+  appel en test sur un compte réel est refusé par Stripe).
 
 ## Suppression via la Corbeille (bloquant)
 
@@ -134,11 +158,12 @@ node --test "tests/**/*.test.mjs"
 |---|---|---|
 | `protect-secrets` | 67 | 36 accès à bloquer (dont 13 via MCP), 27 à laisser passer (dont 9 via MCP), 4 entrées invalides |
 | `block-permanent-delete` | 66 | 35 commandes à bloquer, 23 légitimes, 5 limites connues, 3 entrées invalides |
+| `stripe-test-only` | 21 | 9 appels hors mode test à bloquer, 8 à laisser passer, 4 entrées invalides |
 | `require-verification` | 9 | Sites vérifiés, modifiés, sans tampon, plusieurs sites, anti-boucle… |
 
 Les tests ont été validés par **sabotage** : un hook modifié pour tout laisser
 passer fait échouer ses tests de blocage (23 pour `protect-secrets`, puis 13 pour
-son extension aux outils MCP, 4 pour `require-verification`). Un test qui ne peut pas échouer ne prouve rien.
+son extension aux outils MCP, 9 pour `stripe-test-only`, 4 pour `require-verification`). Un test qui ne peut pas échouer ne prouve rien.
 
 ## Gérer les hooks
 

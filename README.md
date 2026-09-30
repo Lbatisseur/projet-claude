@@ -89,7 +89,7 @@ flowchart LR
 
 ## Tests
 
-Les garde-fous sont eux-mêmes testés : 148 tests automatisés, sans dépendance à installer.
+Les garde-fous sont eux-mêmes testés : 174 tests automatisés, sans dépendance à installer.
 
 ```bash
 node --test "tests/**/*.test.mjs"
@@ -111,7 +111,7 @@ par sabotage : un modèle plus petit échoue ([procédure et résultats](docs/so
 | 3 | Skills ([doc](docs/skills.md)) : `/verifier` ✅ · `/nouveau-site` ✅ · `/livrer` | 🚧 |
 | 4 | Hooks bloquants ([doc](docs/hooks.md)) : protection des secrets, suppressions, vérification avant fin de tâche · 120 tests | ✅ |
 | 5 | Sous-agents ([doc](docs/sous-agents.md)) : relecteur sécurité et paiement · banc d'essai 15/15 et 11/11, 0 faux positif grave | ✅ |
-| 6 | Serveurs MCP ([doc](docs/mcp.md)) : navigateur Playwright ✅ (2 failles trouvées et fermées) · Stripe | 🚧 |
+| 6 | Serveurs MCP ([doc](docs/mcp.md)) : navigateur Playwright (2 failles trouvées et fermées) · Stripe en mode test uniquement (OAuth, sans clé) | ✅ |
 | 7 | Workflow : audit multi-agents avant livraison | ⏳ |
 | 8 | Premier site e-commerce réalisé avec l'environnement complet | ⏳ |
 

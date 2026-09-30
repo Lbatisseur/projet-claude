@@ -1,7 +1,11 @@
 {
   "permissions": {
+    "ask": [
+      "mcp__stripe__stripe_api_write"
+    ],
     "deny": [
-      "mcp__playwright__browser_run_code_unsafe"
+      "mcp__playwright__browser_run_code_unsafe",
+      "mcp__stripe__send_stripe_feedback"
     ]
   },
   "hooks": {
@@ -21,6 +25,15 @@
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/block-permanent-delete.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__stripe__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stripe-test-only.mjs"
           }
         ]
       }
