@@ -62,6 +62,48 @@ describe("protect-secrets : laisse passer le reste", () => {
   }
 });
 
+// Outils MCP : un navigateur peut envoyer un fichier du projet dans une page,
+// puis le lire en JavaScript, ou enregistrer une capture sous n'importe quel nom.
+const PW = "mcp__playwright__";
+
+describe("protect-secrets : bloque les secrets via les outils MCP", () => {
+  const cas = [
+    [`${PW}browser_file_upload`, { paths: ["/site/.env.local"] }],
+    [`${PW}browser_file_upload`, { paths: ["/site/public/photo.png", "sites/demo/.env"] }],
+    [`${PW}browser_file_upload`, { paths: ["/site/certificats/stripe.pem"] }],
+    [`${PW}browser_drop`, { element: "zone", target: "e3", paths: ["/site/.env.production"] }],
+    [`${PW}browser_take_screenshot`, { type: "png", filename: ".env" }],
+    [`${PW}browser_console_messages`, { level: "error", filename: "sites/demo/.env.local" }],
+    [`${PW}browser_evaluate`, { function: "() => 1", filename: "/site/.env" }],
+    [`${PW}browser_navigate`, { url: "file:///site/.env.local" }],
+    [`${PW}browser_navigate`, { url: "file:///site/%2Eenv" }],
+    [`${PW}browser_navigate`, { url: "file:///site/prive.key?x=1#fin" }],
+    [`${PW}browser_tabs`, { action: "new", url: "file:///site/.env" }],
+    ["mcp__filesystem__read_file", { path: "/site/.env" }],
+    ["mcp__autre__lire", { options: { file_path: "sites/demo/.env.local" } }],
+  ];
+  for (const [tool, input] of cas) {
+    test(`${tool} ${JSON.stringify(input)}`, () => run(tool, input).assertBlocked());
+  }
+});
+
+describe("protect-secrets : laisse passer l'usage normal des outils MCP", () => {
+  const cas = [
+    [`${PW}browser_navigate`, { url: "http://localhost:3000/panier" }],
+    [`${PW}browser_navigate`, { url: "https://example.com/.env" }],
+    [`${PW}browser_file_upload`, { paths: ["/site/public/photo.png"] }],
+    [`${PW}browser_file_upload`, { paths: ["/site/.env.example"] }],
+    [`${PW}browser_file_upload`, {}],
+    [`${PW}browser_take_screenshot`, { type: "png", filename: "accueil-mobile.png" }],
+    [`${PW}browser_type`, { element: "champ", target: "e5", text: "mon fichier .env" }],
+    [`${PW}browser_snapshot`, {}],
+    ["mcp__claude_ai_Claude_Docs__batch", { batch: [{ markdown: "Copier .env.example en .env.local" }] }],
+  ];
+  for (const [tool, input] of cas) {
+    test(`${tool} ${JSON.stringify(input)}`, () => run(tool, input).assertAllowed());
+  }
+});
+
 describe("protect-secrets : ne casse jamais la session", () => {
   for (const [nom, stdin] of [
     ["entrée vide", ""],

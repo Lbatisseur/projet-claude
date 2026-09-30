@@ -24,7 +24,7 @@ sur la lecture ordinaire.
 
 | Hook | Événement | Famille | Protège contre |
 |---|---|---|---|
-| [`protect-secrets.mjs`](../.claude/hooks/protect-secrets.mjs) | `PreToolUse` (lecture, écriture, recherche, shell) | Bloquant | La fuite ou l'écrasement d'un secret |
+| [`protect-secrets.mjs`](../.claude/hooks/protect-secrets.mjs) | `PreToolUse` (lecture, écriture, recherche, shell, outils MCP) | Bloquant | La fuite ou l'écrasement d'un secret |
 | [`block-permanent-delete.sh`](../.claude/hooks/block-permanent-delete.sh) | `PreToolUse` (shell) | Bloquant | Une perte de données irréversible |
 | [`require-verification.sh`](../.claude/hooks/require-verification.sh) | `Stop` | Bloquant | Un site rendu sans avoir été vérifié |
 | [`notify-sound.sh`](../.claude/hooks/notify-sound.sh) | `Stop`, `Notification` | Non bloquant | Devoir surveiller le terminal |
@@ -42,6 +42,7 @@ Refuse tout accès de l'agent aux fichiers secrets : `.env`, `.env.local`,
 |---|---|
 | Outils de fichiers | `Read`, `Write`, `Edit`, `MultiEdit`, `NotebookEdit` sur `.env.local` |
 | Recherche | `Grep` dans `.env.local` ou avec le filtre `.env*`, `Glob` sur `**/.env*` |
+| Outils MCP ([navigateur](mcp.md)) | Envoi de `.env.local` dans une page, capture enregistrée sous `.env`, URL `file://…/%2Eenv` |
 | Shell | `cat .env`, `source .env`, `cp .env.example .env.local`, `echo … >> .env.local` |
 
 - **Pourquoi** : les clés Stripe donnent accès à l'argent des clients. Un secret lu
@@ -53,6 +54,11 @@ Refuse tout accès de l'agent aux fichiers secrets : `.env`, `.env.local`,
   nom du fichier (`cat .e""nv`) n'est pas reconnue ; à l'inverse, un nom de fichier
   secret cité dans du texte (message de commit, `echo`) bloque la commande : écrire
   ce texte dans un fichier avec l'outil d'écriture, puis `git commit -F <fichier>`.
+- **Outils MCP** : chaque serveur nomme ses paramètres à sa façon. Le hook examine
+  les champs qui désignent un fichier (`path`, `paths`, `file_path`, `filename`…) et
+  les URL `file://`, où qu'ils soient dans l'argument ; le texte libre (saisie dans
+  un formulaire, contenu d'un document) n'est pas examiné. Un nouveau serveur qui
+  nommerait autrement un chemin de fichier doit être ajouté aux tests.
 
 ## Suppression via la Corbeille (bloquant)
 
@@ -126,13 +132,13 @@ node --test "tests/**/*.test.mjs"
 
 | Hook | Tests | Contenu |
 |---|---|---|
-| `protect-secrets` | 45 | 23 accès à bloquer, 18 à laisser passer, 4 entrées invalides |
+| `protect-secrets` | 67 | 36 accès à bloquer (dont 13 via MCP), 27 à laisser passer (dont 9 via MCP), 4 entrées invalides |
 | `block-permanent-delete` | 66 | 35 commandes à bloquer, 23 légitimes, 5 limites connues, 3 entrées invalides |
 | `require-verification` | 9 | Sites vérifiés, modifiés, sans tampon, plusieurs sites, anti-boucle… |
 
 Les tests ont été validés par **sabotage** : un hook modifié pour tout laisser
-passer fait échouer ses tests de blocage (23 pour `protect-secrets`, 4 pour
-`require-verification`). Un test qui ne peut pas échouer ne prouve rien.
+passer fait échouer ses tests de blocage (23 pour `protect-secrets`, puis 13 pour
+son extension aux outils MCP, 4 pour `require-verification`). Un test qui ne peut pas échouer ne prouve rien.
 
 ## Gérer les hooks
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Hook PreToolUse : interdit à l'agent de lire, écrire ou afficher un fichier secret
-// (.env, .env.local, clés .pem/.key…), quel que soit l'outil utilisé.
+// (.env, .env.local, clés .pem/.key…), quel que soit l'outil utilisé,
+// y compris les outils MCP (navigateur : envoi de fichier, capture, URL file://).
 // Seul le modèle documenté .env.example reste accessible.
 //
 // Code de sortie 2 = action refusée (le message sur stderr est renvoyé à l'agent).
@@ -31,8 +32,38 @@ function secretsInCommand(command) {
   return found;
 }
 
+// Outils MCP (navigateur…) : chaque serveur nomme ses paramètres à sa façon.
+// On parcourt tout l'argument et on retient les champs qui désignent un fichier
+// (envoi, capture enregistrée…) ou une URL file://. Une URL http(s) vise une
+// autre machine : elle n'expose pas les secrets du projet.
+const PATH_KEY = /^(paths?|files?|file_?paths?|file_?names?)$/i;
+const URL_KEY = /^(urls?|uri)$/i;
+
+function mcpTargets(value, key = "", found = []) {
+  if (Array.isArray(value)) {
+    for (const item of value) mcpTargets(item, key, found);
+  } else if (value && typeof value === "object") {
+    for (const [k, v] of Object.entries(value)) mcpTargets(v, k, found);
+  } else if (typeof value === "string") {
+    if (PATH_KEY.test(key)) found.push(value);
+    else if (URL_KEY.test(key) && /^file:/i.test(value)) found.push(fileUrlPath(value));
+  }
+  return found;
+}
+
+// file:///site/%2Eenv?x#y → /site/.env
+function fileUrlPath(url) {
+  const path = url.replace(/^file:(\/\/)?/i, "").split(/[?#]/)[0];
+  try {
+    return decodeURIComponent(path);
+  } catch {
+    return path;
+  }
+}
+
 // Chemins et motifs touchés par l'appel d'outil
 function targetsOf(tool, input) {
+  if (String(tool).startsWith("mcp__")) return mcpTargets(input);
   switch (tool) {
     case "Read":
     case "Write":

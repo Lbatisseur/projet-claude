@@ -37,12 +37,13 @@ pour qu'il produise un résultat **fiable, vérifié et reproductible** d'un sit
 
 ## Architecture
 
-L'environnement repose sur cinq briques de Claude Code, chacune répondant à un besoin précis :
+L'environnement repose sur six briques de Claude Code, chacune répondant à un besoin précis :
 
 ```mermaid
 flowchart LR
     A["CLAUDE.md<br/><i>que dois-je savoir ?</i>"] --> B["Skills<br/><i>comment faire ?</i>"]
-    B --> C["Hooks<br/><i>qu'est-ce qui est interdit ?</i>"]
+    B --> M["Serveurs MCP<br/><i>avec quels outils ?</i>"]
+    M --> C["Hooks<br/><i>qu'est-ce qui est interdit ?</i>"]
     C --> D["Sous-agents<br/><i>qui vérifie ?</i>"]
     D --> E["Workflows<br/><i>comment orchestrer ?</i>"]
 ```
@@ -51,6 +52,7 @@ flowchart LR
 |---|---|---|
 | **CLAUDE.md** | Contexte du projet chargé à chaque session : stack, conventions, règles | [`CLAUDE.md`](CLAUDE.md) |
 | **Skills** | Procédures réutilisables déclenchées par `/commande` | `.claude/skills/` |
+| **Serveurs MCP** | Outils externes branchés sur l'agent (navigateur, Stripe) | [`.mcp.json`](.mcp.json) |
 | **Hooks** | Garde-fous exécutés automatiquement, que l'agent ne peut pas contourner | `.claude/settings.json` |
 | **Sous-agents** | Spécialistes au contexte isolé (relecture, sécurité, paiement) | `.claude/agents/` |
 | **Workflows** | Orchestration de plusieurs agents en parallèle | `.claude/workflows/` |
@@ -71,8 +73,9 @@ flowchart LR
 ├── CLAUDE.md          # Contexte chargé par Claude Code à chaque session
 ├── README.md
 ├── .claude/           # Outillage agentique (réglages, skills, hooks, agents)
+├── .mcp.json          # Serveurs MCP du projet (navigateur)
 ├── docs/              # Documentation détaillée, un fichier par sujet
-├── tests/             # Tests de l'outillage : hooks (automatisés), sous-agents (banc d'essai)
+├── tests/             # Tests de l'outillage : hooks et config MCP (automatisés), sous-agents (banc d'essai)
 └── sites/             # Sites : démos publiques ; sites clients exclus (dépôts privés)
 ```
 
@@ -86,13 +89,13 @@ flowchart LR
 
 ## Tests
 
-Les garde-fous sont eux-mêmes testés : 120 tests automatisés, sans dépendance à installer.
+Les garde-fous sont eux-mêmes testés : 148 tests automatisés, sans dépendance à installer.
 
 ```bash
 node --test "tests/**/*.test.mjs"
 ```
 
-Chaque suite a été validée par sabotage : un hook volontairement cassé doit faire échouer ses tests.
+Chaque suite a été validée par sabotage : un hook volontairement cassé, ou un réglage de sécurité retiré, doit faire échouer ses tests.
 
 Le relecteur sécurité est évalué sur un banc d'essai de trois boutiques (15 failles classiques, 11 failles
 subtiles avec tentatives de manipulation, une version saine), à l'aveugle, sur plusieurs passages, et validé
@@ -108,7 +111,7 @@ par sabotage : un modèle plus petit échoue ([procédure et résultats](docs/so
 | 3 | Skills ([doc](docs/skills.md)) : `/verifier` ✅ · `/nouveau-site` ✅ · `/livrer` | 🚧 |
 | 4 | Hooks bloquants ([doc](docs/hooks.md)) : protection des secrets, suppressions, vérification avant fin de tâche · 120 tests | ✅ |
 | 5 | Sous-agents ([doc](docs/sous-agents.md)) : relecteur sécurité et paiement · banc d'essai 15/15 et 11/11, 0 faux positif grave | ✅ |
-| 6 | Serveurs MCP : navigateur, Stripe | ⏳ |
+| 6 | Serveurs MCP ([doc](docs/mcp.md)) : navigateur Playwright ✅ (2 failles trouvées et fermées) · Stripe | 🚧 |
 | 7 | Workflow : audit multi-agents avant livraison | ⏳ |
 | 8 | Premier site e-commerce réalisé avec l'environnement complet | ⏳ |
 

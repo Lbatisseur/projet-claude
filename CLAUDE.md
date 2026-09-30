@@ -28,7 +28,8 @@ justifié et noté dans la documentation du site concerné.
 | Dossier | Contenu |
 |---|---|
 | `.claude/` | Réglages, hooks, skills et sous-agents du projet |
-| `tests/` | Tests des hooks (`node --test`) et banc d'essai des sous-agents |
+| `.mcp.json` | Serveurs MCP : navigateur Playwright pour tester les sites comme un visiteur |
+| `tests/` | Tests des hooks et de la config MCP (`node --test`), banc d'essai des sous-agents |
 | `docs/` | Documentation détaillée (un fichier par sujet) |
 | `sites/` | Un dossier par site, créé avec `/nouveau-site`. Sites clients : dépôt git privé propre, exclus du dépôt public. Sites `demo-*` : fictifs, publics |
 

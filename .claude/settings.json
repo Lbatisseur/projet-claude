@@ -1,8 +1,13 @@
 {
+  "permissions": {
+    "deny": [
+      "mcp__playwright__browser_run_code_unsafe"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Read|Write|Edit|MultiEdit|NotebookEdit|Grep|Glob|Bash",
+        "matcher": "Read|Write|Edit|MultiEdit|NotebookEdit|Grep|Glob|Bash|mcp__.*",
         "hooks": [
           {
             "type": "command",
