@@ -11,6 +11,9 @@
 // Toute erreur interne laisse passer (code 0) : un garde-fou ne doit jamais
 // bloquer la session par accident.
 
+// Nom d'outil MCP : mcp__<serveur>__<outil> ; le serveur peut contenir des _ simples
+const isStripeTool = (tool) => /stripe/i.test(tool.match(/^mcp__(.+?)__/)?.[1] ?? "");
+
 let raw = "";
 process.stdin.on("data", (chunk) => (raw += chunk));
 process.stdin.on("end", () => {
@@ -22,7 +25,10 @@ process.stdin.on("end", () => {
   }
   const tool = String(event?.tool_name ?? "");
   const input = event?.tool_input;
-  if (!tool.startsWith("mcp__stripe__") || !input || typeof input !== "object") {
+  // Tout serveur dont le nom contient « stripe » : celui de .mcp.json
+  // (mcp__stripe__…), le connecteur de claude.ai (mcp__claude_ai_Stripe__…),
+  // ou un second serveur ajouté plus tard sous un autre nom.
+  if (!isStripeTool(tool) || !input || typeof input !== "object") {
     process.exit(0);
   }
 

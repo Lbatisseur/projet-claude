@@ -69,8 +69,12 @@ const valeurs = {
   DATE: new Date().toISOString().slice(0, 10),
   NOM_JSON: JSON.stringify(nom), DESCRIPTION_JSON: JSON.stringify(description),
 };
+// Dans un tableau Markdown, une barre | ouvrirait une colonne : on l'échappe.
+const pourMarkdown = (v) => String(v).replace(/\|/g, "\\|");
 for (const f of ["CLAUDE.md", "README.md", "src/lib/site.ts"]) {
-  const texte = fs.readFileSync(f, "utf8").replace(/\{\{(\w+)\}\}/g, (m, cle) => valeurs[cle] ?? m);
+  const md = f.endsWith(".md");
+  const texte = fs.readFileSync(f, "utf8").replace(/\{\{(\w+)\}\}/g, (m, cle) =>
+    cle in valeurs ? (md ? pourMarkdown(valeurs[cle]) : valeurs[cle]) : m);
   fs.writeFileSync(f, texte);
 }
 JS

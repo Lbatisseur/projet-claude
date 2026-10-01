@@ -111,6 +111,13 @@ projet ni vue par l'agent ; l'accès se révoque dans Stripe (Paramètres utilis
 | Règle `ask` sur `stripe_api_write` | Une création, modification ou suppression sans accord de l'utilisateur, même en mode automatique | `settings.json` |
 | Règle `deny` sur `send_stripe_feedback` | Un message envoyé à Stripe au nom du compte | `settings.json` |
 
+Les deux règles existent en double : `mcp__stripe__…` (vérifiée en conditions
+réelles) et `mcp__*__…` (joker), pour couvrir le **connecteur Stripe de claude.ai**,
+dont les outils s'appellent `mcp__claude_ai_Stripe__…` : sans le joker, l'installer
+aurait contourné l'accord et l'interdiction. Le serveur Stripe refuse par ailleurs
+toute écriture passée par l'outil de lecture (`stripe_api_read` avec une opération
+`POST` : « Use stripe_api_write instead »), vérifié le 2026-10-01.
+
 La lecture (`stripe_api_read`, recherche, documentation) reste libre : elle ne
 modifie rien et ne touche que des données de test.
 

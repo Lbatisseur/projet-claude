@@ -10,24 +10,35 @@
 
 import { basename } from "node:path";
 
-// Nom de fichier secret : .env, .env.local, .env.production…, *.pem, *.key
-const SECRET_FILE = /^(\.env(\..+)?|.+\.(pem|key))$/;
-const ALLOWED_FILE = /^\.env\.(example|sample|template)$/;
+// Nom de fichier secret : .env, .env.local, .env.production…, .envrc (direnv),
+// clés *.pem, *.key, *.p12, *.pfx, clés SSH privées (id_rsa, id_ed25519…), .netrc.
+// Sans tenir compte de la casse : le disque d'un Mac ne la distingue pas,
+// « .ENV.LOCAL » ouvre le fichier .env.local.
+const SECRET_FILE =
+  /^(\.env(\..+)?|\.envrc|.+\.(pem|key|p12|pfx)|id_(rsa|dsa|ecdsa|ed25519)(_sk)?|\.netrc)$/i;
+const ALLOWED_FILE = /^\.env\.(example|sample|template)$/i;
 
-// Dans une commande shell : un mot qui désigne un fichier .env ou une clé
+// Dans une commande shell : un mot qui désigne un fichier secret, y compris écrit
+// avec un joker (.env*, .env.loca?) ou collé à une ponctuation du shell
+// (`cat .env`, {.env,x}, git show HEAD:.env).
 const SECRET_IN_COMMAND =
-  /(^|[\s"'=<>|;&(/])(\.env(\.[\w.-]+)?|[\w.-]+\.(pem|key))(?=$|[\s"'<>|;&)])/g;
+  /(^|[\s"'=<>|;&(/`{,:])(\.env[\w.*?-]*|[\w.*?-]+\.(pem|key|p12|pfx)|id_(rsa|dsa|ecdsa|ed25519)(_sk)?|\.netrc)(?=$|[\s"'<>|;&)`},:])/gi;
 
 function isSecretFile(path) {
   const name = basename(String(path));
   return SECRET_FILE.test(name) && !ALLOWED_FILE.test(name);
 }
 
+// Un joker qui commence comme .env peut désigner un secret : .env*, .e?v
+function isSecretGlob(word) {
+  return /[*?]/.test(word) && /^\.env/i.test(word) && !ALLOWED_FILE.test(word);
+}
+
 function secretsInCommand(command) {
   const found = [];
   for (const match of String(command).matchAll(SECRET_IN_COMMAND)) {
     const word = match[2];
-    if (isSecretFile(word)) found.push(word);
+    if (isSecretFile(word) || isSecretGlob(word)) found.push(word);
   }
   return found;
 }
@@ -114,7 +125,7 @@ process.stdin.on("end", () => {
     // Un motif Glob/Grep comme "**/.env*" vise aussi des secrets
     const name = basename(String(target));
     if (ALLOWED_FILE.test(name)) continue;
-    if (isSecretFile(target) || /^\*?\.env/.test(name)) {
+    if (isSecretFile(target) || /^\*?\.env/i.test(name)) {
       deny(`${tool} sur un fichier secret (${target}).`);
     }
   }

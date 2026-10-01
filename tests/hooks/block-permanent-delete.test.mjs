@@ -42,6 +42,39 @@ describe("block-permanent-delete : laisse passer les commandes légitimes", () =
   for (const c of commandes) test(c, () => run(c).assertAllowed());
 });
 
+// Trouvés par la campagne d'attaque du 2026-09-30.
+describe("block-permanent-delete : bloque les destructions git et outils ajoutés", () => {
+  const commandes = [
+    "git checkout .", "git checkout -f", "git checkout --force main",
+    "git restore --staged --worktree .", "git restore --worktree --staged src/a.ts", "git restore -W --staged a.ts",
+    "git stash drop", "git stash drop stash@{1}", "git stash clear",
+    "git branch -D ancienne", "git branch --delete --force ancienne",
+    "git push --force", "git push -f origin main", "git push origin main --force",
+    "npx rimraf node_modules", "ruby -e 'File.delete(\"a\")'", "ruby -e 'FileUtils.rm_rf(\"d\")'",
+    "rm\tfichier", // tabulation : invisible tant que le hook lisait le JSON brut
+    "git rm --cached a.ts; rm b.ts", // le --cached d'une commande n'excuse pas la suivante
+  ];
+  for (const c of commandes) test(JSON.stringify(c), () => run(c).assertBlocked());
+});
+
+describe("block-permanent-delete : laisse passer les commandes git sûres", () => {
+  const commandes = [
+    "git rm --cached secrets.txt", "git rm -r --cached .next", "git rm --cached -r dossier",
+    "git stash list", "git stash pop", "git stash show -p",
+    "git branch -d fusionnee", "git branch -a",
+    "git push origin main", "git push --force-with-lease",
+    "git checkout -b feature/panier", "git switch main",
+  ];
+  for (const c of commandes) test(c, () => run(c).assertAllowed());
+});
+
+test("block-permanent-delete : la description de la commande n'est pas analysée", () => {
+  runHook(HOOK, {
+    tool_name: "Bash",
+    tool_input: { command: "git status", description: "Vérifier l'état avant rm" },
+  }).assertAllowed();
+});
+
 // Limites assumées et documentées dans docs/hooks.md : ces commandes passent.
 // Si l'une d'elles devient bloquée, mettre à jour la documentation.
 describe("block-permanent-delete : limites connues (passent volontairement)", () => {
@@ -49,6 +82,8 @@ describe("block-permanent-delete : limites connues (passent volontairement)", ()
     'r""m fichier', "$(echo rm) fichier", // camouflage volontaire
     "cat /dev/null > fichier", "echo x > fichier", // réécriture par redirection
     "git -C site clean -fd", // option git avant la sous-commande
+    "git checkout src/app/page.tsx", // indiscernable de « git checkout main » par le texte
+    "git push origin +main", // push forcé par la syntaxe +branche
   ];
   for (const c of commandes) test(c, () => run(c).assertAllowed());
 });

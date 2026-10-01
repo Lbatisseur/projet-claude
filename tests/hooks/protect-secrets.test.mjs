@@ -62,6 +62,52 @@ describe("protect-secrets : laisse passer le reste", () => {
   }
 });
 
+// Contournements trouvés par la campagne d'attaque du 2026-09-30.
+// Le disque d'un Mac ignore la casse : .ENV ouvre .env.
+describe("protect-secrets : bloque les contournements (casse, jokers, ponctuation)", () => {
+  const cas = [
+    ["Read", { file_path: "/site/.ENV" }],
+    ["Read", { file_path: "/site/.Env.Local" }],
+    ["Read", { file_path: "/site/cles/PRIVE.KEY" }],
+    ["Bash", { command: "cat .ENV.LOCAL" }],
+    ["mcp__playwright__browser_file_upload", { paths: ["/site/.ENV"] }],
+    ["Bash", { command: "cat .env*" }],
+    ["Bash", { command: "cat .env.loca?" }],
+    ["Bash", { command: "echo `cat .env`" }],
+    ["Bash", { command: "cat {.env,x}" }],
+    ["Bash", { command: "cat .env," }],
+    ["Bash", { command: "git show HEAD:.env" }],
+    ["Read", { file_path: "/projet/.envrc" }],
+    ["Bash", { command: "cat .envrc" }],
+    ["Read", { file_path: "/home/.netrc" }],
+    ["Read", { file_path: "/home/.ssh/id_ed25519" }],
+    ["Bash", { command: "cat ~/.ssh/id_rsa" }],
+    ["Read", { file_path: "/site/certificat.p12" }],
+    ["Read", { file_path: "/site/certificat.PFX" }],
+  ];
+  for (const [tool, input] of cas) {
+    test(`${tool} ${JSON.stringify(input)}`, () => run(tool, input).assertBlocked());
+  }
+});
+
+describe("protect-secrets : pas de faux positif avec les motifs élargis", () => {
+  const cas = [
+    ["Read", { file_path: "/site/.ENV.EXAMPLE" }],
+    ["Read", { file_path: "/home/.ssh/id_ed25519.pub" }],
+    ["Read", { file_path: "/site/src/environment.ts" }],
+    ["Bash", { command: "cat .env.example" }],
+    ["Bash", { command: "git show HEAD:src/app/page.tsx" }],
+    ["Bash", { command: "echo {a,b}.ts `date`" }],
+    ["Bash", { command: "ls *.ts" }],
+    ["Bash", { command: "cat .environment.ts" }],
+    ["Bash", { command: 'node -e "console.log(process.env.NODE_ENV)"' }],
+    ["Bash", { command: "npx next build --env production" }],
+  ];
+  for (const [tool, input] of cas) {
+    test(`${tool} ${JSON.stringify(input)}`, () => run(tool, input).assertAllowed());
+  }
+});
+
 // Outils MCP : un navigateur peut envoyer un fichier du projet dans une page,
 // puis le lire en JavaScript, ou enregistrer une capture sous n'importe quel nom.
 const PW = "mcp__playwright__";

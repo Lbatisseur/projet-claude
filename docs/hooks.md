@@ -36,8 +36,12 @@ un JSON invalide ne bloque rien, et chaque blocage explique la raison et l'alter
 ## Protection des secrets (bloquant)
 
 Refuse tout accès de l'agent aux fichiers secrets : `.env`, `.env.local`,
-`.env.production`…, et les clés `*.pem` / `*.key`. Seuls les modèles documentés
-(`.env.example`, `.env.sample`, `.env.template`) restent accessibles.
+`.env.production`…, `.envrc` (direnv), les clés `*.pem`, `*.key`, `*.p12`, `*.pfx`,
+les clés SSH privées (`id_rsa`, `id_ed25519`…) et `.netrc`. Seuls les modèles
+documentés (`.env.example`, `.env.sample`, `.env.template`) restent accessibles.
+
+**Sans tenir compte des majuscules** : le disque d'un Mac (APFS) ne les distingue
+pas, `.ENV.LOCAL` ouvre le fichier `.env.local`. Vérifié avec un fichier canari.
 
 | Voie d'accès | Exemples bloqués |
 |---|---|
@@ -45,14 +49,17 @@ Refuse tout accès de l'agent aux fichiers secrets : `.env`, `.env.local`,
 | Recherche | `Grep` dans `.env.local` ou avec le filtre `.env*`, `Glob` sur `**/.env*` |
 | Outils MCP ([navigateur](mcp.md)) | Envoi de `.env.local` dans une page, capture enregistrée sous `.env`, URL `file://…/%2Eenv` |
 | Shell | `cat .env`, `source .env`, `cp .env.example .env.local`, `echo … >> .env.local` |
+| Shell, formes détournées | Jokers (`cat .env*`, `.env.loca?`), backticks, accolades (`{.env,x}`), `git show HEAD:.env` |
 
 - **Pourquoi** : les clés Stripe donnent accès à l'argent des clients. Un secret lu
   par l'agent se retrouve dans la conversation, donc hors de la machine. L'agent
   documente les variables dans `.env.example` ; l'utilisateur renseigne les valeurs.
 - **Écrit en Node** : il doit analyser proprement le JSON de chaque outil.
 - **Limites** : un `Grep` sur un dossier entier ne lit pas les `.env`, car ils sont
-  exclus par `.gitignore` et ignorés par la recherche ; une commande qui construit le
-  nom du fichier (`cat .e""nv`) n'est pas reconnue ; à l'inverse, un nom de fichier
+  exclus par `.gitignore` et ignorés par la recherche ; en revanche `grep -r` dans le
+  shell les lit sans les nommer, et n'est pas reconnu ; une commande qui construit le
+  nom du fichier (`cat .e""nv`) n'est pas reconnue ; `.npmrc` n'est pas protégé, car
+  dans un projet il contient le plus souvent une configuration ordinaire ; à l'inverse, un nom de fichier
   secret cité dans du texte (message de commit, `echo`) bloque la commande : écrire
   ce texte dans un fichier avec l'outil d'écriture, puis `git commit -F <fichier>`.
 - **Outils MCP** : chaque serveur nomme ses paramètres à sa façon. Le hook examine
@@ -63,8 +70,11 @@ Refuse tout accès de l'agent aux fichiers secrets : `.env`, `.env.local`,
 
 ## Stripe en mode test uniquement (bloquant)
 
-Refuse tout appel au [serveur MCP Stripe](mcp.md#paiement--stripe) qui cible un compte
-sans être explicitement en mode test (`livemode: false`).
+Refuse tout appel à un serveur MCP Stripe ([`stripe`](mcp.md#paiement--stripe), mais
+aussi tout serveur dont le nom contient « stripe », comme le connecteur Stripe de
+claude.ai `mcp__claude_ai_Stripe__…`) qui cible un compte sans être explicitement
+en mode test (`livemode: false`). Le hook reçoit tous les outils MCP et fait le tri
+lui-même, pour qu'un serveur nommé autrement ne lui échappe pas.
 
 | Appel | Décision |
 |---|---|
@@ -90,10 +100,14 @@ Refuse, avec la raison et une alternative :
 
 | Catégorie | Commandes bloquées |
 |---|---|
-| Suppression directe | `rm`, `rmdir`, `unlink`, `shred`, `srm`, `find -delete`, `git rm` |
-| Git destructif | `git clean`, `git reset --hard`, `git checkout -- <fichiers>`, `git restore <fichiers>` |
-| Autres langages | `os.remove`, `shutil.rmtree`, `Path.unlink` (Python), `fs.rm`, `fs.unlink` (Node) |
+| Suppression directe | `rm`, `rmdir`, `unlink`, `shred`, `srm`, `rimraf`, `find -delete`, `git rm` |
+| Git destructif | `git clean`, `git reset --hard`, `git checkout -- <fichiers>`, `git checkout .` ou `-f`, `git restore <fichiers>` (y compris `--staged --worktree`), `git stash drop` / `clear`, `git branch -D`, `git push --force` |
+| Autres langages | `os.remove`, `shutil.rmtree`, `Path.unlink` (Python), `fs.rm`, `fs.unlink` (Node), `File.delete`, `FileUtils.rm` (Ruby) |
 | Divers | `rsync --delete`, `truncate` |
+
+Restent autorisés, car ils ne touchent qu'à l'index git : `git restore --staged`
+(sans `--worktree`) et `git rm --cached`. `git push --force-with-lease` et
+`git branch -d` aussi : ils refusent d'écraser du travail.
 
 - **Pourquoi** : une suppression par `rm` ou un `git reset --hard` est définitive.
   Avec la Corbeille ou `git stash`, une erreur de l'agent reste réparable.
@@ -102,6 +116,11 @@ Refuse, avec la raison et une alternative :
   symbolique `~/.claude/hooks/block-permanent-delete.sh`, pour protéger aussi les
   autres projets. Dans ce dépôt, il est donc évalué deux fois, avec le même verdict.
 
+- **Analyse la commande, pas l'événement brut** : le hook extrait la commande du
+  JSON reçu. Avant le 2026-10-01, il cherchait dans le JSON brut, où une tabulation
+  s'écrit `\t` : `rm<tabulation>fichier` passait, et un mot interdit dans la
+  *description* de la commande la bloquait à tort.
+
 **Limites assumées.** La détection se fait par motifs sur le texte de la commande :
 
 - une commande **volontairement camouflée** (`r""m`, `$(echo rm)`) passe : ce hook
@@ -109,6 +128,9 @@ Refuse, avec la raison et une alternative :
 - la **réécriture par redirection** (`> fichier`) passe : la bloquer empêcherait de
   créer des fichiers ;
 - une option placée avant la sous-commande git (`git -C dossier clean`) passe ;
+- `git checkout <fichier>` passe : il annule les modifications du fichier, mais
+  s'écrit exactement comme `git checkout <branche>` ;
+- un push forcé écrit `git push origin +main` passe ;
 - à l'inverse, un mot interdit présent dans du texte (heredoc, `echo`) bloque la
   commande : écrire ce texte avec l'outil d'écriture de fichiers plutôt qu'en shell.
 
@@ -118,10 +140,19 @@ Empêche l'agent de rendre la main tant qu'un site de `sites/` a été modifié 
 sa dernière vérification réussie.
 
 - Quand `/verifier` est entièrement vert, il dépose un tampon
-  `.claude/state/verifier/<site>.ok` (exclu de git).
-- À chaque fin de tour, le hook cherche, pour chaque site, un fichier plus récent
-  que son tampon, en ignorant `node_modules`, `.next` et les fichiers régénérés.
-  Un site sans tampon est considéré comme non vérifié.
+  `.claude/state/verifier/<site>.ok` (exclu de git). Le tampon contient
+  l'**empreinte** du site : la liste de ses fichiers avec leur taille, résumée en
+  une empreinte SHA-256 (seules les métadonnées sont lues, jamais le contenu).
+- À chaque fin de tour, le hook vérifie pour chaque site qu'aucun fichier n'est plus
+  récent que le tampon, **et** que l'empreinte n'a pas changé, en ignorant
+  `node_modules`, `.next`, `.DS_Store` et les fichiers régénérés. L'empreinte attrape
+  ce que la date ne voit pas : un fichier **supprimé**, **renommé** ou copié avec sa
+  date d'origine (`cp -p`), qui peut casser le build sans rendre aucun fichier plus
+  récent. Un site sans tampon est considéré comme non vérifié ; un ancien tampon
+  vide (sans empreinte) ne compte que pour la date.
+- Choix écarté : surveiller la date des **dossiers**, qui change aussi à chaque
+  suppression. Le Finder crée des `.DS_Store` dans les dossiers qu'on ouvre : le
+  site aurait été déclaré non vérifié sans raison.
 - Si un site est non vérifié, le hook bloque la fin du tour (code `2`) et demande
   à l'agent de lancer `/verifier`.
 - **Anti-boucle** : si l'agent a déjà été relancé par ce hook (`stop_hook_active`),
@@ -156,10 +187,10 @@ node --test "tests/**/*.test.mjs"
 
 | Hook | Tests | Contenu |
 |---|---|---|
-| `protect-secrets` | 67 | 36 accès à bloquer (dont 13 via MCP), 27 à laisser passer (dont 9 via MCP), 4 entrées invalides |
-| `block-permanent-delete` | 66 | 35 commandes à bloquer, 23 légitimes, 5 limites connues, 3 entrées invalides |
-| `stripe-test-only` | 21 | 9 appels hors mode test à bloquer, 8 à laisser passer, 4 entrées invalides |
-| `require-verification` | 9 | Sites vérifiés, modifiés, sans tampon, plusieurs sites, anti-boucle… |
+| `protect-secrets` | 95 | 54 accès à bloquer (dont 13 via MCP et 18 contournements), 37 à laisser passer, 4 entrées invalides |
+| `block-permanent-delete` | 100 | 54 commandes à bloquer, 36 légitimes, 7 limites connues, 3 entrées invalides |
+| `stripe-test-only` | 28 | 14 appels hors mode test à bloquer (dont connecteur claude.ai), 10 à laisser passer, 4 entrées invalides |
+| `require-verification` | 14 | Sites vérifiés, modifiés, sans tampon, plusieurs sites, anti-boucle, fichier supprimé, renommé ou copié… |
 
 Les tests ont été validés par **sabotage** : un hook modifié pour tout laisser
 passer fait échouer ses tests de blocage (23 pour `protect-secrets`, puis 13 pour

@@ -20,6 +20,12 @@ describe("stripe-test-only : bloque tout appel hors mode test", () => {
     ["mcp__stripe__stripe_api_write", { stripe_api_operation_id: "PostProducts", stripe_context: CTX, parameters: {} }],
     // Un outil futur qui ciblerait un compte suit la même règle
     ["mcp__stripe__outil_futur", { stripe_context: CTX, livemode: true }],
+    // Le même Stripe par un autre chemin (campagne d'attaque du 2026-09-30)
+    ["mcp__claude_ai_Stripe__stripe_api_write", { stripe_context: CTX, livemode: true }],
+    ["mcp__stripe-client__stripe_api_read", { stripe_context: CTX, livemode: true }],
+    ["mcp__STRIPE__stripe_api_read", { stripe_context: CTX }],
+    ["mcp__stripe__stripe_api_read", { stripe_context: CTX, livemode: "true" }],
+    ["mcp__stripe__stripe_api_read", { stripe_context: CTX, livemode: [false] }],
   ];
   for (const [tool, input] of cas) {
     test(`${tool} ${JSON.stringify(input)}`, () => run(tool, input).assertBlocked());
@@ -35,8 +41,10 @@ describe("stripe-test-only : laisse passer le mode test et le reste", () => {
     ["mcp__stripe__list_available_accounts_or_orgs", {}],
     ["mcp__stripe__manage_stripe_accounts", {}],
     ["mcp__stripe__search_stripe_documentation", { question: "Checkout livemode", language: "fr" }],
+    ["mcp__claude_ai_Stripe__stripe_api_read", { stripe_context: CTX, livemode: false }],
     // Autres outils : pas concernés
     ["mcp__playwright__browser_navigate", { url: "http://localhost:3000", livemode: true }],
+    ["mcp__claude_ai_Claude_Docs__batch", { livemode: true }],
     ["Bash", { command: "npm run build" }],
   ];
   for (const [tool, input] of cas) {

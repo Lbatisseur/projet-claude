@@ -1,11 +1,13 @@
 {
   "permissions": {
     "ask": [
-      "mcp__stripe__stripe_api_write"
+      "mcp__stripe__stripe_api_write",
+      "mcp__*__stripe_api_write"
     ],
     "deny": [
       "mcp__playwright__browser_run_code_unsafe",
-      "mcp__stripe__send_stripe_feedback"
+      "mcp__stripe__send_stripe_feedback",
+      "mcp__*__send_stripe_feedback"
     ]
   },
   "hooks": {
@@ -29,7 +31,7 @@
         ]
       },
       {
-        "matcher": "mcp__stripe__.*",
+        "matcher": "mcp__.*",
         "hooks": [
           {
             "type": "command",

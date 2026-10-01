@@ -46,7 +46,7 @@ Codes de sortie :
 | `format:check` | `prettier --check .` | |
 | `lint` | `eslint --max-warnings=0` | Sans l'option, les avertissements passent au vert |
 | `typecheck` | `next typegen && tsc --noEmit` | Sans `next typegen`, les types générés au build précédent provoquent de fausses erreurs après la suppression d'une page |
-| `test` | `vitest run` | `run` : pas de mode surveillance, qui ne se termine jamais |
+| `test` | `vitest run` | `run` : pas de mode surveillance. Le script lance chaque étape avec `CI=true`, qui force déjà Vitest à ne tourner qu'une fois, mais le `package.json` ne doit pas en dépendre |
 | `build` | `next build` | |
 
 ## 3. Traiter le résultat

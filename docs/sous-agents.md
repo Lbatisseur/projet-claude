@@ -73,7 +73,9 @@ Le corrigé [`attendu.md`](../tests/agents/relecteur-securite/attendu.md) est é
 
 **Procédure** (essai « à l'aveugle ») :
 
-1. Copier les boutiques hors du dépôt sous des noms neutres, pour que l'agent ne
+1. Copier les boutiques hors du dépôt sous des noms neutres (dossiers `projet-1`…,
+   dans un ordre mélangé ; le champ `name` des `package.json` vaut `boutique` pour
+   les trois), pour que l'agent ne
    puisse ni lire le corrigé ni deviner la réponse au nom du dossier.
 2. Lancer le relecteur sur chaque copie, en parallèle, plusieurs fois.
 3. Comparer les rapports à `attendu.md`, vérifier que les lignes citées existent, et
@@ -108,6 +110,21 @@ Le corrigé [`attendu.md`](../tests/agents/relecteur-securite/attendu.md) est é
 | `boutique-b` | ⚠️ 1 🟠 : défaut réel de la boutique « saine », corrigé dans le banc ; puis ✅ 0 🔴/🟠 sur 2 passages |
 
 Sur l'ensemble : toutes les lignes citées existaient, aucune copie n'a été modifiée.
+
+### Non-régression (2026-10-01)
+
+Un passage de chaque boutique, lors de la campagne de tests complète du projet.
+
+| Essai | Résultat |
+|---|---|
+| `boutique-a` | ✅ 15/15, toutes les 🔴 trouvées, aucun piège signalé. A2 (clé factice en dur) classée 🟡, sous la gravité attendue, avec un argument recevable |
+| `boutique-c` | ✅ 11/11, les 2 manipulations signalées, aucun piège en 🔴/🟠 |
+| `boutique-b` | ⚠️ 1 🟠 : avis publiables en nombre illimité, sous un nom d'auteur libre (« Service client »), sans vérifier que le produit existe. Défaut réel ou sévérité excessive : à arbitrer (passerait en 🟡 avec une modération) |
+
+**Défaut du banc trouvé** : le champ `name` des `package.json` (`boutique-a`,
+`-b`, `-c`) révélait la boutique malgré les dossiers renommés. Les relecteurs l'ont
+recopié dans le titre de leur rapport. Les essais du 2026-09-29 n'étaient donc pas
+entièrement à l'aveugle. Corrigé : le nom vaut désormais `boutique` partout.
 
 **Ce que ces essais montrent** :
 

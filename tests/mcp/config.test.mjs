@@ -50,19 +50,29 @@ describe("MCP Stripe", () => {
 
   test("toute écriture dans Stripe demande l'accord de l'utilisateur", () => {
     assert.ok(settings.permissions.ask.includes("mcp__stripe__stripe_api_write"));
-    assert.ok(!settings.permissions.allow?.some((r) => r.startsWith("mcp__stripe")));
+    // Joker : le connecteur Stripe de claude.ai s'appelle mcp__claude_ai_Stripe__…
+    assert.ok(settings.permissions.ask.includes("mcp__*__stripe_api_write"));
+    assert.ok(!settings.permissions.allow?.some((r) => /stripe/i.test(r)));
   });
 
   test("hook stripe-test-only actif sur tous les outils Stripe", () => {
     const entry = settings.hooks.PreToolUse.find((h) =>
       h.hooks.some((x) => x.command.includes("stripe-test-only")),
     );
-    assert.ok(new RegExp(`^(${entry.matcher})$`).test("mcp__stripe__stripe_api_write"));
-    assert.ok(new RegExp(`^(${entry.matcher})$`).test("mcp__stripe__stripe_api_read"));
+    const matcher = new RegExp(`^(${entry.matcher})$`);
+    for (const tool of [
+      "mcp__stripe__stripe_api_write",
+      "mcp__stripe__stripe_api_read",
+      "mcp__claude_ai_Stripe__stripe_api_write",
+      "mcp__STRIPE__stripe_api_read",
+    ]) {
+      assert.ok(matcher.test(tool), tool);
+    }
   });
 
   test("envoi de messages à Stripe au nom du compte interdit", () => {
     assert.ok(settings.permissions.deny.includes("mcp__stripe__send_stripe_feedback"));
+    assert.ok(settings.permissions.deny.includes("mcp__*__send_stripe_feedback"));
   });
 });
 

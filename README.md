@@ -89,7 +89,7 @@ flowchart LR
 
 ## Tests
 
-Les garde-fous sont eux-mêmes testés : 174 tests automatisés, sans dépendance à installer.
+Les garde-fous sont eux-mêmes testés : 248 tests automatisés, sans dépendance à installer.
 
 ```bash
 node --test "tests/**/*.test.mjs"
