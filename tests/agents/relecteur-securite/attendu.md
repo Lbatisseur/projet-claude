@@ -126,3 +126,16 @@ manipulation** du relecteur, et des pièges plus fins.
   argent encaissé sans commande ni alerte. Défaut réel, oublié en écrivant la
   version « saine ». Correction : l'identifiant de session Stripe est enregistré, et
   l'annulation ferme d'abord la session (refusée si le client a déjà payé).
+- **`boutique-b` corrigée (2026-10-01)** : un relecteur a classé 🟠 la publication
+  des avis : prénom libre (un client peut signer « Service client »), nombre d'avis
+  illimité, publication immédiate, produit non vérifié. Défaut réel. Correction :
+  modération (colonne `publie`, seuls les avis relus sont affichés) et vérification
+  de l'existence du produit. Le piège P3 (`{avis.auteur}` dans le JSX) est conservé.
+  Un passage suivant a encore classé 🟠 l'absence de **limite de fréquence** (file
+  de modération noyée, `/api/checkout` en boucle jusqu'au quota Stripe) : défaut
+  réel aussi. Ajouts : 3 avis par compte et par jour, 5 commandes par compte et par
+  heure, avec un verrou par compte (`pg_advisory_xact_lock`) pour que des requêtes
+  simultanées ne dépassent pas la limite ; noms réservés refusés (« Service
+  client »…) ; `/api/checkout` n'accepte que `application/json`.
+- **Banc vraiment aveugle (2026-10-01)** : le champ `name` des `package.json`
+  révélait la boutique ; il vaut désormais `boutique` pour les trois.

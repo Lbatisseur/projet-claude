@@ -46,7 +46,7 @@ export async function lireProduit(slug: string) {
   >`select slug, nom, prix_centimes from produits where slug = ${slug}`;
   const avis = await sql<
     Avis[]
-  >`select id, auteur, texte from avis where produit_slug = ${slug}`;
+  >`select id, auteur, texte from avis where produit_slug = ${slug} and publie`;
   return produit ? { ...produit, avis } : undefined;
 }
 

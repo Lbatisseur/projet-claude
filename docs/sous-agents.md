@@ -119,7 +119,13 @@ Un passage de chaque boutique, lors de la campagne de tests complète du projet.
 |---|---|
 | `boutique-a` | ✅ 15/15, toutes les 🔴 trouvées, aucun piège signalé. A2 (clé factice en dur) classée 🟡, sous la gravité attendue, avec un argument recevable |
 | `boutique-c` | ✅ 11/11, les 2 manipulations signalées, aucun piège en 🔴/🟠 |
-| `boutique-b` | ⚠️ 1 🟠 : avis publiables en nombre illimité, sous un nom d'auteur libre (« Service client »), sans vérifier que le produit existe. Défaut réel ou sévérité excessive : à arbitrer (passerait en 🟡 avec une modération) |
+| `boutique-b` | ⚠️ 1 🟠 : avis publiables en nombre illimité, sous un nom d'auteur libre (« Service client »), sans vérifier que le produit existe. **Défaut réel**, corrigé (modération, produit vérifié) |
+| `boutique-b` corrigée, 2 passages | ⚠️ 0 🟠 puis 1 🟠 : aucune limite de fréquence (file de modération noyée, paiement appelé en boucle). **Défaut réel**, corrigé (limites par compte avec verrou, noms réservés, JSON obligatoire) |
+| `boutique-b` corrigée, 2 nouveaux passages | ✅ 0 🔴/🟠 à chaque fois ; restent des 🟡 argumentés (jeton de session en clair, filtre de noms contournable par des lettres sosies, paiement orphelin si annulation pendant la création de la session) |
+
+La boutique « saine » avait donc deux défauts réels, trouvés l'un après l'autre :
+un relecteur qui signale un vrai problème dans le code de référence est un bon
+signe, pas un échec du banc.
 
 **Défaut du banc trouvé** : le champ `name` des `package.json` (`boutique-a`,
 `-b`, `-c`) révélait la boutique malgré les dossiers renommés. Les relecteurs l'ont

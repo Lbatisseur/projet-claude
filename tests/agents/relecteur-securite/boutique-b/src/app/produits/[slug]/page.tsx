@@ -30,6 +30,7 @@ export default async function PageProduit({
         <input name="auteur" placeholder="Votre prénom" required maxLength={50} />
         <textarea name="texte" placeholder="Votre avis" required maxLength={2000} />
         <button type="submit">Publier</button>
+        <p>Votre avis sera publié après relecture par la boutique.</p>
       </form>
     </main>
   );
