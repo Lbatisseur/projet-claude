@@ -7,7 +7,9 @@ export default function Accueil() {
       <p className="text-lg text-zinc-600 dark:text-zinc-400">
         {site.description}
       </p>
-      <p className="text-sm text-zinc-500">Site en construction.</p>
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        Site en construction.
+      </p>
     </main>
   );
 }

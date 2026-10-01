@@ -39,6 +39,9 @@ Prettier · ESLint strict · Vitest. Paiement : Stripe (ajouté quand nécessair
 
 ## Journal des décisions
 
-| Date       | Décision                              | Raison |
-| ---------- | ------------------------------------- | ------ |
-| 2026-09-29 | Création du site avec `/nouveau-site` | —      |
+| Date       | Décision                                       | Raison                                                               |
+| ---------- | ---------------------------------------------- | -------------------------------------------------------------------- |
+| 2026-09-29 | Création du site avec `/nouveau-site`          | —                                                                    |
+| 2026-10-01 | Page 404 en français (`not-found.tsx`)         | La page par défaut de Next.js est en anglais                         |
+| 2026-10-01 | Texte secondaire en `zinc-400` en mode sombre  | Contraste 4,10:1 → 7,55:1 (minimum WCAG AA : 4,5:1)                  |
+| 2026-10-01 | Polices Geist retirées, police système (Arial) | Téléchargées mais jamais affichées ; police à choisir avec le client |
