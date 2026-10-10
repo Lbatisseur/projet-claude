@@ -75,7 +75,7 @@ flowchart LR
 ├── .claude/           # Outillage agentique (réglages, skills, hooks, agents)
 ├── .mcp.json          # Serveurs MCP du projet (navigateur)
 ├── docs/              # Documentation détaillée, un fichier par sujet
-├── tests/             # Tests de l'outillage : hooks et config MCP (automatisés), sous-agents (banc d'essai)
+├── tests/             # Tests de l'outillage : hooks, config MCP, scripts des skills (automatisés), sous-agents (banc d'essai)
 └── sites/             # Sites : démos publiques ; sites clients exclus (dépôts privés)
 ```
 
@@ -89,13 +89,13 @@ flowchart LR
 
 ## Tests
 
-Les garde-fous sont eux-mêmes testés : 248 tests automatisés, sans dépendance à installer.
+Les garde-fous et les scripts des skills sont eux-mêmes testés : 283 tests automatisés, sans dépendance à installer.
 
 ```bash
 node --test "tests/**/*.test.mjs"
 ```
 
-Chaque suite a été validée par sabotage : un hook volontairement cassé, ou un réglage de sécurité retiré, doit faire échouer ses tests.
+Chaque suite a été validée par sabotage : un hook ou un script volontairement cassé, ou un réglage de sécurité retiré, doit faire échouer ses tests.
 
 Le relecteur sécurité est évalué sur un banc d'essai de trois boutiques (15 failles classiques, 11 failles
 subtiles avec tentatives de manipulation, une version saine), à l'aveugle, sur plusieurs passages, et validé
@@ -108,7 +108,7 @@ par sabotage : un modèle plus petit échoue ([procédure et résultats](docs/so
 | 0 | Mise en place : Git, GitHub CLI, exclusion des secrets | ✅ |
 | 1 | Contexte agent : `CLAUDE.md` | ✅ |
 | 2 | Premier hook non bloquant : notifications sonores ([doc](docs/hooks.md)) | ✅ |
-| 3 | Skills ([doc](docs/skills.md)) : `/verifier` ✅ · `/nouveau-site` ✅ · `/livrer` | 🚧 |
+| 3 | Skills ([doc](docs/skills.md)) : `/verifier` ✅ · `/nouveau-site` ✅ · `/cadrage` ✅ · `/livrer` | 🚧 |
 | 4 | Hooks bloquants ([doc](docs/hooks.md)) : protection des secrets, suppressions, vérification avant fin de tâche · 120 tests | ✅ |
 | 5 | Sous-agents ([doc](docs/sous-agents.md)) : relecteur sécurité et paiement · banc d'essai 15/15 et 11/11, 0 faux positif grave | ✅ |
 | 6 | Serveurs MCP ([doc](docs/mcp.md)) : navigateur Playwright (2 failles trouvées et fermées) · Stripe en mode test uniquement (OAuth, sans clé) | ✅ |

@@ -73,4 +73,5 @@ ou le script, pas seulement dans le site créé.
 
 En quelques lignes : le dossier créé, le type de site, le résultat de `/verifier`,
 la commande pour le voir dans le navigateur (`cd sites/<identifiant> && npm run dev`,
-puis http://localhost:3000), et la prochaine étape (ajouter le catalogue, le paiement…).
+puis http://localhost:3000), et la prochaine étape : établir le cahier des charges
+avec `/cadrage`, avant de coder les fonctionnalités.

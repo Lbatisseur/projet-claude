@@ -29,7 +29,7 @@ justifié et noté dans la documentation du site concerné.
 |---|---|
 | `.claude/` | Réglages, hooks, skills et sous-agents du projet |
 | `.mcp.json` | Serveurs MCP : navigateur Playwright (tester les sites comme un visiteur), Stripe (mode test uniquement) |
-| `tests/` | Tests des hooks et de la config MCP (`node --test`), banc d'essai des sous-agents |
+| `tests/` | Tests des hooks, de la config MCP et des scripts des skills (`node --test`), banc d'essai des sous-agents |
 | `docs/` | Documentation détaillée (un fichier par sujet) |
 | `sites/` | Un dossier par site, créé avec `/nouveau-site`. Sites clients : dépôt git privé propre, exclus du dépôt public. Sites `demo-*` : fictifs, publics |
 
@@ -42,11 +42,14 @@ justifié et noté dans la documentation du site concerné.
 - **Secrets** : ne jamais lire, écrire ni committer de fichier `.env`. Documenter
   les variables nécessaires dans `.env.example`, sans valeurs réelles (un hook
   bloque tout accès aux secrets).
-- **Outillage** : après toute modification d'un hook, lancer
+- **Outillage** : après toute modification d'un hook ou d'un script de skill, lancer
   `node --test "tests/**/*.test.mjs"` et compléter les tests.
 - **Commits** : format [Conventional Commits](https://www.conventionalcommits.org/fr/),
   en français, un changement logique par commit (`feat:`, `fix:`, `docs:`, `chore:`…).
   Ne committer que sur demande de l'utilisateur.
+- **Périmètre** : avant de coder les fonctionnalités d'un site, établir son cahier des
+  charges avec `/cadrage` (`CADRAGE.md` du site) ; une fonctionnalité absente du
+  cadrage y est ajoutée avant d'être codée.
 - **Vérification** : ne jamais déclarer terminée une modification de code d'un site
   sans avoir lancé `/verifier` sur ce site et obtenu du vert.
 - **Sécurité** : toute modification touchant au paiement, aux routes API, aux Server

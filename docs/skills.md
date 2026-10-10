@@ -126,6 +126,77 @@ versionnés publiquement.
 | Site client | Dépôt git propre avec un commit, invisible du dépôt public, `.env.example` versionné, `/verifier` vert |
 | Lancement réel du skill (`/nouveau-site` puis `/verifier`) | Site `demo-maison-lumen` créé et vert en moins d'une minute |
 
+### `/cadrage`
+
+Établit, avec l'utilisateur, le cahier des charges d'un site avant d'en coder les
+fonctionnalités : `sites/<identifiant>/CADRAGE.md`.
+
+- Fichiers : [`SKILL.md`](../.claude/skills/cadrage/SKILL.md),
+  [`templates/CADRAGE.md`](../.claude/skills/cadrage/templates/CADRAGE.md),
+  [`scripts/check-cadrage.mjs`](../.claude/skills/cadrage/scripts/check-cadrage.mjs)
+- Usage : `/cadrage demo-maison-lumen` (après `/nouveau-site`)
+- **Pourquoi** : un client décrit ce qu'il veut en vrac. Sans cadrage, l'agent code
+  tout ce qui est demandé, dans le désordre, et personne ne sait quand le site est
+  « fini ». L'idée vient de la méthode BMAD, qui fait précéder le code d'une phase
+  d'analyse : on en garde seulement l'étape légère de recueil du besoin, sans la
+  chaîne complète de rôles et de documents de BMAD, trop lourde pour un petit site.
+
+**Déroulé** :
+
+1. **Entretien** en trois tours au plus (le commerce, la vente, le cadre), cinq
+   questions par tour, chacune avec une réponse par défaut acceptable d'un mot.
+   L'utilisateur relaie souvent le client : une réponse inconnue n'est jamais
+   inventée, elle devient une question ouverte `Q-xx`.
+2. **Périmètre** : chaque besoin est classé *Lancement*, *Plus tard* ou *Hors
+   périmètre*, avec la raison. Le skill défend un lancement petit et soumet ce
+   découpage à l'utilisateur avant d'écrire.
+3. **Critères d'acceptation** `CA-xx` : au moins un par fonctionnalité du lancement,
+   formulé pour être vérifiable par un visiteur ou un test (« le total se met à
+   jour sans recharger la page », pas « le panier est pratique »). L'audit avant
+   livraison (étape 7) teste le site contre ces critères.
+4. **Obligations légales** de la vente en ligne en France (mentions légales, CGV,
+   rétractation, RGPD, cookies, médiateur, prix TTC, bouton de commande), chacune
+   avec un statut. Le skill recense, il ne rédige pas de texte juridique.
+5. **Contrôle** par le script, puis mise à jour de la fiche `CLAUDE.md` du site et
+   `/verifier`.
+
+**Le script de contrôle** vérifie la forme, pas le fond : sections présentes et
+remplies, identifiants uniques, chaque fonctionnalité du lancement couverte par un
+critère, aucun critère sur une fonctionnalité reportée, toutes les obligations
+légales statuées, aucun renvoi vers un identifiant inexistant, et aucune question
+bloquante ouverte sur un cadrage marqué « Validé par le client ». Le fond (un bon
+découpage, des critères utiles) relève du jugement de l'agent et de la relecture
+de l'utilisateur.
+
+**Tests** : 35 tests automatisés
+([`tests/skills/check-cadrage.test.mjs`](../tests/skills/check-cadrage.test.mjs)).
+Un cadrage de référence complet est abîmé d'une seule façon par test (28 défauts
+différents), plus les cas acceptés (fins de ligne Windows, `|` échappé dans une
+cellule, cadrage validé) et les erreurs d'usage.
+
+Validation par sabotage : 8 versions cassées du script.
+
+| Sabotage | Détecté |
+|---|---|
+| Couverture des fonctionnalités, statut « Validé » laxiste, commentaires du modèle comptés comme contenu, renvois non contrôlés, question bloquante ignorée, critère sur une fonctionnalité reportée | ✅ |
+| `\|` échappé coupé comme séparateur | ❌ puis ✅ : le cas de test était placé dans un tableau où une colonne de trop ne change rien. Il a été déplacé dans le tableau des questions, où il décale la colonne « Bloquante » |
+| Fins de ligne Windows non gérées | Sans effet : les cellules et titres sont déjà nettoyés par `trim()`, le script résiste deux fois |
+
+**Lancement réel** sur `demo-maison-lumen`, l'utilisateur jouant la cliente : un
+cadrage de 8 fonctionnalités, 23 critères et 7 questions ouvertes, conforme du
+premier coup. Ce lancement a révélé trois défauts, que les tests du script ne
+pouvaient pas voir :
+
+1. **Le hook de vérification bloquait l'entretien** : le skill créait `CADRAGE.md`
+   dès le début. Le site était donc modifié, et le hook `require-verification`
+   exigeait `/verifier` à la fin de chaque tour de questions. Le fichier n'est
+   plus créé qu'après l'entretien.
+2. **Un statut légal manquait** : le prix TTC et le bouton de commande ne sont pas
+   des textes à fournir, c'est le site qui les respecte. Ajout du statut
+   `À intégrer`, couvert par un critère d'acceptation.
+3. **`/verifier` échouait sur le formatage** : Prettier vérifie aussi les fichiers
+   Markdown du site. Le skill formate désormais `CADRAGE.md` et la fiche.
+
 ### À venir
 
 - `/livrer` : préparer la mise en ligne et la livraison au client
