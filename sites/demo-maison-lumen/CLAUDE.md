@@ -15,7 +15,11 @@ racine du dépôt d'outillage ; ce fichier les complète pour ce client.
 | Créé le             | 2026-09-29                             |
 | Type                | Démo (versionnée dans le dépôt public) |
 
-<!-- À compléter au fil du projet : public visé, ton, pages attendues. -->
+Particuliers de 25 à 55 ans, qui achètent pour eux ou pour offrir, surtout sur
+téléphone. Ton chaleureux et artisanal. Mise en ligne visée : 15 novembre 2026.
+
+Cahier des charges : [`CADRAGE.md`](CADRAGE.md) (périmètre, critères d'acceptation,
+questions ouvertes).
 
 ## Identité visuelle
 
@@ -28,7 +32,10 @@ Prettier · ESLint strict · Vitest. Paiement : Stripe (ajouté quand nécessair
 
 Écarts par rapport à la stack par défaut, avec leur justification :
 
-- Aucun pour l'instant.
+- **Base de données** pour le stock uniquement : les quantités changent à chaque
+  commande, et le site hébergé ne peut pas modifier ses propres fichiers. Le
+  catalogue reste un fichier du code (voir `CADRAGE.md`, Choix techniques).
+- **Service d'envoi d'e-mails** pour les confirmations de commande.
 
 ## Conventions du site
 
@@ -39,9 +46,10 @@ Prettier · ESLint strict · Vitest. Paiement : Stripe (ajouté quand nécessair
 
 ## Journal des décisions
 
-| Date       | Décision                                       | Raison                                                               |
-| ---------- | ---------------------------------------------- | -------------------------------------------------------------------- |
-| 2026-09-29 | Création du site avec `/nouveau-site`          | —                                                                    |
-| 2026-10-01 | Page 404 en français (`not-found.tsx`)         | La page par défaut de Next.js est en anglais                         |
-| 2026-10-01 | Texte secondaire en `zinc-400` en mode sombre  | Contraste 4,10:1 → 7,55:1 (minimum WCAG AA : 4,5:1)                  |
-| 2026-10-01 | Polices Geist retirées, police système (Arial) | Téléchargées mais jamais affichées ; police à choisir avec le client |
+| Date       | Décision                                                    | Raison                                                                 |
+| ---------- | ----------------------------------------------------------- | ---------------------------------------------------------------------- |
+| 2026-09-29 | Création du site avec `/nouveau-site`                       | —                                                                      |
+| 2026-10-01 | Page 404 en français (`not-found.tsx`)                      | La page par défaut de Next.js est en anglais                           |
+| 2026-10-01 | Texte secondaire en `zinc-400` en mode sombre               | Contraste 4,10:1 → 7,55:1 (minimum WCAG AA : 4,5:1)                    |
+| 2026-10-01 | Polices Geist retirées, police système (Arial)              | Téléchargées mais jamais affichées ; police à choisir avec le client   |
+| 2026-10-10 | Cadrage v1 avec `/cadrage` : 8 fonctionnalités au lancement | Gestion des produits par la cliente reportée : 4 nouveautés par saison |
