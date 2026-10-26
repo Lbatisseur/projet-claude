@@ -267,11 +267,12 @@ C'est la raison de la règle de `/auditer` : après des corrections, on relance
   relecteur sécurité l'a signalé et a relu le bon dossier, et aucun rapport ne cite
   les résultats attendus. Mais l'aveugle n'était plus garanti par construction :
   `/auditer` passe désormais aux agents le **chemin absolu** du site.
-- **Limite connue** : les relecteurs n'ont pas d'outil pour exécuter `npm audit`.
-  Les failles connues des dépendances (versions de Next.js, Vite…) échappent donc à
-  l'audit. À traiter séparément.
+- **Limite trouvée, puis comblée** : les relecteurs n'exécutent rien, donc pas
+  `npm audit`. Les failles connues des dépendances leur échappaient : Next.js 16.3.7
+  avait deux failles critiques que personne n'a signalées. `/verifier` contrôle
+  désormais les dépendances ([détail](skills.md#étape--dépendances--ajoutée-le-2026-10-26)),
+  et `/auditer` reporte ce résultat dans sa synthèse.
 
 ## À venir
 
 - Autres relecteurs selon les besoins (performances, contraste mesuré).
-- Contrôle des dépendances vulnérables (`npm audit`) dans l'audit.

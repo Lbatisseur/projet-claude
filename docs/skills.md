@@ -52,6 +52,49 @@ Contrôle qualité d'un site client avant de déclarer une tâche terminée.
   règle) pour obtenir du vert.
 - Tester le script sans l'agent : `.claude/skills/verifier/scripts/verify.sh sites/<site>`
 
+#### Étape « Dépendances » (ajoutée le 2026-10-26)
+
+Avant les scripts du site, `npm audit` cherche les **failles connues** des paquets
+installés dans la base publique de npm. Une faille connue est un défaut de sécurité
+déjà publié, avec la version qui le corrige : le code du site peut être parfait et
+le site vulnérable quand même, parce qu'un paquet a vieilli.
+
+| Situation | Résultat | Pourquoi |
+|---|---|---|
+| Faille élevée ou critique dans un paquet du site (`dependencies`) | ❌ bloquant | Il tourne en ligne, face aux visiteurs |
+| Failles mineures dans les paquets du site | ✅ avec mention | À corriger, sans bloquer le travail |
+| Failles graves dans les outils de développement seulement (tests, lint) | ✅ avec mention | Ils ne tournent que sur la machine du développeur |
+| `npm audit` sans réponse (hors connexion), sortie illisible, ou projet non npm | ℹ️ « non vérifiées » | Ne pas bloquer le travail hors connexion, sans jamais afficher un faux vert |
+
+**Pourquoi cette étape** : l'audit avant livraison du 2026-10-26 n'a rien vu, alors
+que `npm audit` signalait deux failles critiques dans Next.js 16.3.7, dont une
+exécution de code à distance dans l'optimisation d'images avec des fichiers SVG,
+justement utilisés par nos boutiques. Les relecteurs ne lisent que le code et
+n'exécutent rien : ils ne pouvaient pas le voir. Placée dans `/verifier`, la
+vérification profite aussi à `/auditer`, qui l'exige en prérequis.
+
+Conséquence voulue : un site vert peut passer au rouge sans qu'on touche à son code,
+le jour où une faille est publiée.
+
+Première application : `demo-maison-lumen` et les deux boutiques du banc d'essai
+passés de Next.js 16.3.7 à 16.4.3 et de Vitest 3 à 4.1.12 (Vitest 5 exige Node 22
+ou 24 ; le README annonce Node ≥ 20). npm 10.9.2 échouait sur cette mise à jour
+(`Cannot read properties of null (reading 'edgesOut')`, un défaut de npm) ; npm 11
+l'a faite proprement, après mise à la Corbeille de `node_modules` et du fichier de
+verrouillage.
+
+**Tests** : 11 tests automatisés
+([`tests/skills/verifier-dependances.test.mjs`](../tests/skills/verifier-dependances.test.mjs))
+avec un faux `npm` qui renvoie le rapport voulu, sans réseau : aucune faille,
+critique, élevée, plusieurs paquets, mineures seulement, outils de développement
+seulement, registre injoignable, sortie tronquée, audit trop long, projet pnpm, et
+les autres étapes qui continuent malgré l'échec. Validés par sabotage de 6 façons
+(seules les critiques bloquent, absence de réponse comptée comme verte, outils de
+développement comptés comme le site, échec sans code de sortie, audit sans délai
+maximal, audit lancé hors npm) : tous détectés. Vérifié aussi pour de vrai, sur un
+projet recréé avec les anciennes versions : ❌ sur Next.js, puis ✅ avec mention des
+outils de développement une fois Next.js à jour.
+
 #### Campagne de tests
 
 Le skill a été éprouvé sur un vrai projet Next.js 16 (dans un chemin contenant un
