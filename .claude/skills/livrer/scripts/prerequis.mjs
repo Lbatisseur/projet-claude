@@ -101,7 +101,9 @@ if (git("rev-parse", "--is-inside-work-tree").stdout.trim() !== "true") {
   if (modifs) {
     manque(`Modifications non committées dans le site (${modifs.split("\n").length} fichier(s)) : committer avant de livrer`);
   } else {
-    ok(`Code committé (commit ${git("rev-parse", "--short", "HEAD").stdout.trim()})`);
+    // Le dernier commit qui touche le site, pas celui du dépôt : un site rangé dans
+    // un dépôt plus grand (la démo, dans le dépôt de l'outillage) partage son historique
+    ok(`Code committé (commit ${git("log", "-1", "--format=%h", "--", ".").stdout.trim()})`);
   }
 }
 

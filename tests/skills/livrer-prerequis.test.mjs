@@ -66,6 +66,16 @@ describe("prerequis.mjs : site prêt", () => {
     writeFileSync(join(racine, "autre.md"), "brouillon");
     assertPret(prerequis(site, "recette"));
   });
+  test("site dans un sous-dossier : le commit affiché est le dernier qui touche le site", () => {
+    const { racine, site } = depot({ sousDossier: true });
+    const g = (...args) => spawnSync("git", ["-C", racine, "-c", "user.name=T", "-c", "user.email=t@example.org", ...args], { encoding: "utf8" });
+    const duSite = g("rev-parse", "--short", "HEAD").stdout.trim();
+    writeFileSync(join(racine, "autre.md"), "outillage");
+    g("add", "autre.md");
+    g("commit", "-q", "-m", "outillage");
+    const r = prerequis(site, "recette");
+    assert.match(r.stdout, new RegExp(`✅ Code committé \\(commit ${duSite}\\)`));
+  });
 });
 
 describe("prerequis.mjs : choix de mise en ligne", () => {
