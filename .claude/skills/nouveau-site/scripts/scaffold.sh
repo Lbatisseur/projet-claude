@@ -37,10 +37,18 @@ npx --yes create-next-app@16 "$site" \
   || abort "échec de create-next-app (connexion internet ?)."
 cd "$site" || abort "dossier $site inaccessible."
 
-# 2. Outils de qualité
-step "Installation de Prettier et Vitest…"
-npm install --save-dev --silent prettier prettier-plugin-tailwindcss vitest >/dev/null 2>&1 \
-  || abort "échec de l'installation des outils."
+# 2. Versions des outils, alignées sur les choix de la stack (docs/skills.md,
+#    /entretenir, « Versions retenues ») :
+#    - types de Node : la version de Node réellement utilisée, pas la dernière
+#      (create-next-app installe @types/node 20, que Vitest 5 refuse) ;
+#    - TypeScript 6 : typescript-eslint ne lit pas TypeScript 7.
+#    Le journal de npm est gardé : en cas d'échec, sa fin est affichée.
+journal="$(mktemp "${TMPDIR:-/tmp}/scaffold-npm.XXXXXX")"
+node_majeur="$(node -p 'process.versions.node.split(".")[0]')"
+step "Installation de Prettier, Vitest, TypeScript 6 et des types de Node ${node_majeur}…"
+npm install --save-dev --save-exact=false prettier prettier-plugin-tailwindcss vitest \
+  "@types/node@^$node_majeur" "typescript@^6" >"$journal" 2>&1 \
+  || { tail -n 25 "$journal" >&2; abort "échec de l'installation des outils (journal : $journal)."; }
 
 # 3. Scripts exigés par /verifier
 step "Configuration des scripts…"

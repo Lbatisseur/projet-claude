@@ -169,6 +169,14 @@ versionnés publiquement.
 | Site client | Dépôt git propre avec un commit, invisible du dépôt public, `.env.example` versionné, `/verifier` vert |
 | Lancement réel du skill (`/nouveau-site` puis `/verifier`) | Site `demo-maison-lumen` créé et vert en moins d'une minute |
 
+**Un outil de création vieillit aussi** (2026-10-26). Au premier site client, la
+création a échoué : Vitest 5, sorti entre-temps, refuse les types de Node 20 que
+`create-next-app` installe, et le script cachait le message de npm. Le script
+installe désormais les types de la version de Node réellement utilisée et
+TypeScript 6 (les mêmes choix que les « versions retenues » de
+[`/entretenir`](#entretenir)), et affiche la fin du journal de npm en cas d'échec.
+Le site recréé passe `/verifier` au vert.
+
 ### `/cadrage`
 
 Établit, avec l'utilisateur, le cahier des charges d'un site avant d'en coder les
