@@ -52,6 +52,8 @@ justifié et noté dans la documentation du site concerné.
   cadrage y est ajoutée avant d'être codée.
 - **Vérification** : ne jamais déclarer terminée une modification de code d'un site
   sans avoir lancé `/verifier` sur ce site et obtenu du vert.
+- **Livraison** : avant de livrer ou de mettre en ligne un site, lancer `/auditer` ;
+  jamais de livraison sur un verdict 🔴. Après corrections, relancer l'audit complet.
 - **Sécurité** : toute modification touchant au paiement, aux routes API, aux Server
   Actions, aux formulaires, à l'authentification ou aux secrets est relue par le
   sous-agent `relecteur-securite` ; corriger les constats 🔴 et 🟠 avant de conclure.

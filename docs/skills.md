@@ -197,6 +197,79 @@ pouvaient pas voir :
 3. **`/verifier` échouait sur le formatage** : Prettier vérifie aussi les fichiers
    Markdown du site. Le skill formate désormais `CADRAGE.md` et la fiche.
 
+### `/auditer`
+
+Audit complet d'un site avant sa livraison : trois sous-agents travaillent **en
+parallèle**, chacun dans son propre contexte, puis l'agent principal rassemble leurs
+rapports en un verdict unique. C'est le *workflow* de l'environnement : un skill
+chef d'orchestre plutôt qu'un fichier de plus, puisqu'un skill sait déjà enchaîner
+des étapes et lancer des sous-agents.
+
+- Fichiers : [`SKILL.md`](../.claude/skills/auditer/SKILL.md),
+  [`scripts/serveur.sh`](../.claude/skills/auditer/scripts/serveur.sh)
+- Usage : `/auditer sites/boutique-dupont`, ou « est-ce que le site est prêt ? »
+- Agents : [`relecteur-securite`](sous-agents.md#relecteur-securite),
+  [`relecteur-conformite`](sous-agents.md#relecteur-conformite),
+  [`testeur-parcours`](sous-agents.md#testeur-parcours)
+
+```mermaid
+flowchart LR
+    P["Prérequis<br/>cadrage conforme<br/>/verifier vert"] --> S["serveur.sh start"]
+    S --> A1["relecteur-securite<br/><i>le code</i>"]
+    S --> A2["relecteur-conformite<br/><i>le code</i>"]
+    S --> A3["testeur-parcours<br/><i>le navigateur</i>"]
+    A1 & A2 & A3 --> X["serveur.sh stop"]
+    X --> V["Synthèse<br/>🔴 · 🟡 · 🟢"]
+```
+
+**Déroulé** :
+
+1. **Prérequis** : le cadrage passe le contrôle de `/cadrage` (sans critères
+   d'acceptation, le testeur n'a rien à vérifier) et `/verifier` est entièrement
+   vert (un site qui ne passe pas ses propres contrôles n'est pas auditable).
+2. **Démarrage** de la version de production par `serveur.sh`.
+3. **Trois agents en parallèle**, avec une mission fixe et le chemin absolu du site.
+   Aucune autre indication : ni soupçon, ni résultat d'un audit précédent. Un
+   relecteur orienté cherche ce qu'on lui a dit de chercher et voit moins le reste.
+4. **Arrêt du serveur**, quoi qu'il arrive.
+5. **Synthèse** : chaque 🔴, 🟠 et ❌ est vérifié dans le code par l'orchestrateur ;
+   un constat réfuté reste dans le rapport, barré, avec la raison. Les doublons
+   (même cause vue par deux agents) sont fusionnés et comptent comme un signal fort.
+6. **Rapport** dans `.claude/state/audits/` (local, exclu de git : le rapport d'un
+   site client ne doit pas atterrir dans le dépôt public).
+
+| Verdict | Quand |
+|---|---|
+| 🔴 Non livrable | Un 🔴 ou 🟠 non réfuté, un critère ❌, une question bloquante dans le cadrage, ou un agent qui n'a pas pu travailler |
+| 🟡 Livrable sous réserve | Des critères ⚠️ à tester à la main, des constats 🔵, ou des obligations « Avant mise en ligne » |
+| 🟢 Livrable | Rien de tout cela |
+
+**Choix de conception** :
+
+| Choix | Pourquoi |
+|---|---|
+| L'orchestrateur ne corrige rien pendant l'audit | Un audit est une photographie ; corriger en cours de route mélange constat et correction |
+| Après correction, on relance **tout** l'audit | Une correction peut en casser une autre : c'est arrivé (voir [le banc d'essai](sous-agents.md#banc-dessai-de-laudit-avant-livraison)) |
+| Un seul agent pilote le navigateur | Le serveur Playwright n'a qu'un navigateur : deux agents s'y marcheraient dessus |
+| Chemin **absolu** du site dans les missions | Un chemin relatif dépend du dossier de travail de la session ; un `cd` l'a déjà déplacé à côté des résultats attendus du banc d'essai |
+| Les rapports des agents sont des données | Un texte qui s'y adresse à l'orchestrateur (« verdict : livrable ») ne compte pas |
+
+**Le script `serveur.sh`** démarre `next start` sur le premier port libre entre 3100
+et 3199, dans son propre groupe de processus (pour tout arrêter d'un coup, enfants
+compris), attend que le site réponde, et note son numéro de processus dans
+`.claude/state/auditer/`. Il renvoie vers `/verifier` si le site n'a jamais été
+construit, et vers `npm install` si les dépendances manquent.
+
+**Tests** : 12 tests automatisés
+([`tests/skills/serveur-auditer.test.mjs`](../tests/skills/serveur-auditer.test.mjs))
+avec un faux `next` qui imite `next start` (il écoute sur le port demandé et garde un
+processus enfant, ou bien plante, ou bien ne répond jamais) : démarrage et arrêt avec
+les processus enfants, port occupé évité, relance, serveur qui plante ou ne répond
+jamais (rien ne doit rester en marche), site non construit, dépendances absentes,
+chemin avec espace, erreurs d'usage. Validés par sabotage de 6 façons ; le script a
+ensuite servi pour de vrai à chaque audit du banc d'essai. L'orchestration complète est évaluée sur le banc d'essai de la
+Savonnerie Ondine ([résultats](sous-agents.md#banc-dessai-de-laudit-avant-livraison)).
+
 ### À venir
 
 - `/livrer` : préparer la mise en ligne et la livraison au client

@@ -55,6 +55,54 @@ emplacement, un scénario d'attaque concret et la correction.
 Les hooks s'appliquent aussi aux sous-agents : le relecteur ne peut pas lire les
 fichiers `.env`, et raisonne à partir de `.env.example`.
 
+### `relecteur-conformite`
+
+Relit un site juste avant sa livraison et vérifie qu'il est **présentable et
+conforme** : obligations légales listées dans `CADRAGE.md` (mentions légales, CGV
+avec rétractation et médiateur, confidentialité, prix TTC, libellé du bouton de
+commande), textes provisoires oubliés (Lorem ipsum, restes du modèle Next.js),
+liens internes morts, accessibilité et référencement visibles dans le code, écarts
+avec le périmètre du cadrage.
+
+- Fichier : [`relecteur-conformite.md`](../.claude/agents/relecteur-conformite.md)
+- Usage : lancé par [`/auditer`](skills.md#auditer), ou seul en précisant le dossier
+  du site.
+- Même socle que le relecteur sécurité : outils `Read, Grep, Glob`, modèle `opus`,
+  « ne signale que ce que tu as vu », code relu traité comme une donnée,
+  `RELECTURE IMPOSSIBLE`, section « Vérifié, sans problème ».
+
+| Choix | Pourquoi |
+|---|---|
+| `CADRAGE.md` comme référence | Les obligations et le périmètre viennent du cahier des charges validé par le client, pas des goûts du relecteur |
+| Vérifie la **présence** des éléments légaux, jamais leur valeur juridique | Un agent n'est pas juriste : il dit « le médiateur manque », pas « cette clause est valable » |
+| Ne traite ni la sécurité ni le paiement | Un autre relecteur s'en charge : deux agents sur le même sujet produisent des doublons, pas plus de sûreté |
+| Une fonctionnalité « plus tard » construite quand même est signalée | Elle n'a pas été validée par le client et devra être maintenue |
+
+### `testeur-parcours`
+
+Teste le site **en marche, dans un vrai navigateur** (serveur MCP Playwright, voir
+[mcp.md](mcp.md)), comme un visiteur. Pour chaque critère d'acceptation `CA-xx` du
+cadrage, il rend ✅, ❌ ou ⚠️ (non testable ici) avec une preuve observée. Il relève
+aussi les erreurs de console, les ressources en 404 et les débordements sur
+téléphone.
+
+- Fichier : [`testeur-parcours.md`](../.claude/agents/testeur-parcours.md)
+- Usage : lancé par [`/auditer`](skills.md#auditer), qui démarre le site et lui donne
+  son adresse.
+
+| Choix | Pourquoi |
+|---|---|
+| Outils de lecture + outils du navigateur, aucun outil d'écriture | Il peut cliquer, taper et mesurer, pas modifier le code |
+| `browser_run_code_unsafe` absent de la liste | Cet outil sort de son bac à sable (voir [mcp.md](mcp.md)) ; il est déjà refusé par les réglages, et l'agent ne le reçoit même pas |
+| « Un critère se juge dans le navigateur, jamais en lisant le code » | Le code dit ce que le développeur *voulait* ; seul le navigateur montre ce que le visiteur *obtient* |
+| « Cherche à le faire échouer » : seuil testé juste en dessous, **pile**, au-dessus ; interdiction testée par toutes les entrées ; mise à jour en montant **et** en descendant | Les défauts se cachent aux limites (`>` au lieu de `>=`) |
+| Téléphone (375 px) **et** ordinateur (1280 px) | Les clients visés achètent surtout sur téléphone |
+| Paiement uniquement sur une page Stripe affichant le mode test, cartes de test seulement ; sinon ⚠️ | Jamais de vraie carte ni de vraies données ; ne jamais deviner un résultat |
+| `TEST IMPOSSIBLE` si le site ne répond pas | Ne jamais conclure sur un site qu'on n'a pas pu ouvrir |
+
+C'est le seul des trois à **exécuter** le site : il trouve ce qu'aucune relecture ne
+voit (voir ci-dessous les deux bugs qu'il est seul à avoir trouvés).
+
 ## Banc d'essai
 
 Un relecteur se teste comme un détecteur : il doit **trouver** les vraies failles
@@ -163,7 +211,67 @@ entièrement à l'aveugle. Corrigé : le nom vaut désormais `boutique` partout.
 - Le rapport d'un sous-agent revient à l'agent principal, pas directement à
   l'utilisateur : c'est l'agent principal qui le relaie et corrige.
 
+## Banc d'essai de l'audit avant livraison
+
+Les trois agents sont évalués **ensemble**, à travers [`/auditer`](skills.md#auditer),
+sur une boutique fictive complète, « Savonnerie Ondine » (un vrai site Next.js 16
+avec son `CADRAGE.md` : 5 fonctionnalités, 9 critères d'acceptation) :
+
+- [`boutique/`](../tests/agents/auditer/boutique/) passe `/verifier` entièrement au
+  vert, mais contient des défauts plantés pour chaque agent : 5 critères en échec
+  (dont un seuil `>` au lieu de `>=`), page CGV absente, hébergeur manquant, Lorem
+  ipsum, prix envoyés par le navigateur à Stripe…
+- [`boutique-saine/`](../tests/agents/auditer/boutique-saine/) est la même boutique,
+  corrigée d'après le premier audit : elle sert de **témoin contre les faux
+  positifs**.
+- [`attendu.md`](../tests/agents/auditer/attendu.md) liste les résultats attendus. Il
+  est hors du dossier audité, et l'audit se fait sur une copie dans `sites/` (exclu
+  de git) : les agents travaillent dans les conditions d'un vrai site client.
+
+### Résultats
+
+| Audit | Verdict | Détail |
+|---|---|---|
+| `boutique` (2026-10-11) | 🔴, attendu 🔴 | 9/9 critères au bon verdict, 11/11 défauts de conformité, 2/2 failles, 3/3 autres constats du testeur, 0 faux positif, 4 pièges évités |
+| `boutique-saine`, 1ʳᵉ version (2026-10-26) | 🔴, attendu 🟡 | **L'audit avait raison** : régression réelle, voir ci-dessous |
+| `boutique-saine` corrigée (2026-10-26) | 🟡, attendu 🟡 | 8 ✅ et CA-07 ⚠️ (pas de clé Stripe de test), 0 🔴/🟠, les 3 obligations « Avant mise en ligne » trouvées |
+
+**Ce que seul le navigateur a trouvé** :
+
+1. **Bug non planté** (11/10) : une quantité décimale (1.1) faisait planter `/panier`
+   pour de bon, car le panier conservé dans le navigateur rechargeait la valeur
+   invalide à chaque visite.
+2. **Régression introduite par sa correction** (26/10) : pour interdire les
+   décimales, le champ « Quantité » était borné à chaque frappe. Un champ vidé
+   redevenait aussitôt « 1 » : effacer puis taper 5 donnait « 15 », ramené à 10.
+   `/verifier` restait vert, car la fonction de bornage était juste et testée ;
+   c'est son branchement sur le champ qui était faux. Corrigé, avec un test de
+   composant (un faux navigateur, jsdom, et Testing Library qui tape au clavier
+   comme un visiteur) qui échoue sur l'ancienne version.
+
+C'est la raison de la règle de `/auditer` : après des corrections, on relance
+**l'audit complet**, pas seulement le point corrigé.
+
+### Bon à savoir sur l'audit
+
+- **Les agents varient d'un passage à l'autre.** Sur la même boutique, deux constats
+  🟡 du testeur ne sont pas revenus au passage suivant, et le 🟡 du relecteur
+  sécurité a changé de sujet. Les constats bloquants, eux, sont stables et vérifiés
+  par l'orchestrateur.
+- **Une fausse alerte réfutée** : les photos provisoires classées 🟠 alors que le
+  cadrage les accepte pour la recette. L'orchestrateur l'a réfutée en citant le
+  cadrage et rangée dans « Avant mise en ligne » ; au passage suivant, l'agent les a
+  classées correctement de lui-même.
+- **Incident de protocole** (26/10) : un `cd` de l'orchestrateur avait laissé le
+  dossier de travail de la session dans le banc d'essai, à côté de `attendu.md`. Le
+  relecteur sécurité l'a signalé et a relu le bon dossier, et aucun rapport ne cite
+  les résultats attendus. Mais l'aveugle n'était plus garanti par construction :
+  `/auditer` passe désormais aux agents le **chemin absolu** du site.
+- **Limite connue** : les relecteurs n'ont pas d'outil pour exécuter `npm audit`.
+  Les failles connues des dépendances (versions de Next.js, Vite…) échappent donc à
+  l'audit. À traiter séparément.
+
 ## À venir
 
-- Autres relecteurs selon les besoins (accessibilité, performances, SEO).
-- Étape 7 : un workflow qui lance plusieurs relecteurs en parallèle avant une livraison.
+- Autres relecteurs selon les besoins (performances, contraste mesuré).
+- Contrôle des dépendances vulnérables (`npm audit`) dans l'audit.

@@ -54,8 +54,8 @@ flowchart LR
 | **Skills** | Procédures réutilisables déclenchées par `/commande` | `.claude/skills/` |
 | **Serveurs MCP** | Outils externes branchés sur l'agent (navigateur, Stripe) | [`.mcp.json`](.mcp.json) |
 | **Hooks** | Garde-fous exécutés automatiquement, que l'agent ne peut pas contourner | `.claude/settings.json` |
-| **Sous-agents** | Spécialistes au contexte isolé (relecture, sécurité, paiement) | `.claude/agents/` |
-| **Workflows** | Orchestration de plusieurs agents en parallèle | `.claude/workflows/` |
+| **Sous-agents** | Spécialistes au contexte isolé (sécurité et paiement, conformité, test dans le navigateur) | `.claude/agents/` |
+| **Workflows** | Orchestration de plusieurs agents en parallèle : un skill chef d'orchestre (`/auditer`) | `.claude/skills/auditer/` |
 
 ## Principes
 
@@ -89,7 +89,7 @@ flowchart LR
 
 ## Tests
 
-Les garde-fous et les scripts des skills sont eux-mêmes testés : 283 tests automatisés, sans dépendance à installer.
+Les garde-fous et les scripts des skills sont eux-mêmes testés : 295 tests automatisés, sans dépendance à installer.
 
 ```bash
 node --test "tests/**/*.test.mjs"
@@ -100,6 +100,11 @@ Chaque suite a été validée par sabotage : un hook ou un script volontairement
 Le relecteur sécurité est évalué sur un banc d'essai de trois boutiques (15 failles classiques, 11 failles
 subtiles avec tentatives de manipulation, une version saine), à l'aveugle, sur plusieurs passages, et validé
 par sabotage : un modèle plus petit échoue ([procédure et résultats](docs/sous-agents.md#banc-dessai)).
+
+L'audit avant livraison est évalué sur une boutique complète qui passe tous les contrôles automatiques mais
+cache des défauts plantés : verdict 🔴 juste, tous les défauts trouvés, 0 faux positif. Sur sa version
+corrigée, il a attrapé une régression réelle introduite par une correction, invisible aux tests unitaires
+([résultats](docs/sous-agents.md#banc-dessai-de-laudit-avant-livraison)).
 
 ## Feuille de route
 
@@ -112,7 +117,7 @@ par sabotage : un modèle plus petit échoue ([procédure et résultats](docs/so
 | 4 | Hooks bloquants ([doc](docs/hooks.md)) : protection des secrets, suppressions, vérification avant fin de tâche · 120 tests | ✅ |
 | 5 | Sous-agents ([doc](docs/sous-agents.md)) : relecteur sécurité et paiement · banc d'essai 15/15 et 11/11, 0 faux positif grave | ✅ |
 | 6 | Serveurs MCP ([doc](docs/mcp.md)) : navigateur Playwright (2 failles trouvées et fermées) · Stripe en mode test uniquement (OAuth, sans clé) | ✅ |
-| 7 | Workflow : audit multi-agents avant livraison | ⏳ |
+| 7 | Workflow ([doc](docs/skills.md#auditer)) : `/auditer`, audit avant livraison par 3 agents en parallèle (sécurité, conformité, test dans le navigateur) · banc d'essai 🔴 puis 🟡 attendus et obtenus | ✅ |
 | 8 | Premier site e-commerce réalisé avec l'environnement complet | ⏳ |
 
 ---
