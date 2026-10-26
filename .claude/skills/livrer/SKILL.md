@@ -98,10 +98,14 @@ premier déploiement) : une ligne par étape, remplacée à chaque redéploiemen
 ```markdown
 ## En ligne
 
-| Étape | Adresse | Hébergeur | Commit | Date | Vérification |
-| ----- | ------- | --------- | ------ | ---- | ------------ |
-| Recette | https://… | Vercel, projet `…` | `abc1234` | AAAA-MM-JJ | 8 ✅ · 1 ⚠️ sur 9 |
+| Étape | Adresse | Hébergeur | Déploiement | Commit | Date | Vérification |
+| ----- | ------- | --------- | ----------- | ------ | ---- | ------------ |
+| Recette | https://… | Vercel, projet `…` | `dpl_…` | `abc1234` | AAAA-MM-JJ | 8 ✅ · 1 ⚠️ sur 9 |
 ```
+
+La colonne « Déploiement » contient l'identifiant donné par l'hébergeur (procédure) :
+`/entretenir` vérifie ensuite que l'adresse sert toujours ce déploiement-là, donc
+que personne n'a mis le site en ligne en dehors de `/livrer`.
 
 Formate la fiche avec Prettier, puis propose le commit.
 

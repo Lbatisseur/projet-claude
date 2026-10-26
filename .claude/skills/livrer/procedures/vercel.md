@@ -101,7 +101,8 @@ curl -s -o /dev/null -w "%{http_code}\n" https://<identifiant>.vercel.app
 ```
 
 `inspect` doit afficher `status ● Ready`, `target production` et l'adresse stable
-dans « Aliases » ; `curl` doit répondre `200` : le site est public, sans connexion à
+dans « Aliases » ; son `id` (`dpl_…`) va dans la colonne « Déploiement » de la
+fiche ; `curl` doit répondre `200` : le site est public, sans connexion à
 Vercel (une page de connexion ou un `401` signale une protection des déploiements
 activée sur le projet).
 
