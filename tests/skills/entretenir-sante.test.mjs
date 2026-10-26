@@ -109,7 +109,7 @@ const git = (dossier, ...args) =>
   spawnSync("git", ["-C", dossier, "-c", "user.name=T", "-c", "user.email=t@example.org", ...args], { encoding: "utf8" });
 
 /** Un site committé ; `lignes` : les lignes du tableau « En ligne » (le commit est ajouté). */
-function siteLivre({ lignes, verrou = true, section = true } = {}) {
+function siteLivre({ lignes, verrou = true, section = true, retenues = null } = {}) {
   const site = join(base, `site-${++n}`);
   mkdirSync(join(site, "src"), { recursive: true });
   writeFileSync(join(site, "package.json"), '{"name":"boutique"}\n');
@@ -124,7 +124,10 @@ function siteLivre({ lignes, verrou = true, section = true } = {}) {
     .map(([etape, adresse, hebergeur, deploiement]) => `| ${etape} | ${adresse} | ${hebergeur} | ${deploiement} | \`${commit}\` | 2026-10-26 | 9 ✅ |`)
     .join("\n");
   const enLigne = `## En ligne\n\n| Étape | Adresse | Hébergeur | Déploiement | Commit | Date | Vérification |\n| --- | --- | --- | --- | --- | --- | --- |\n${tableau}\n\n## Journal\n`;
-  writeFileSync(join(site, "CLAUDE.md"), `# Fiche\n\n${section ? enLigne : ""}`);
+  const versionsRetenues = retenues
+    ? `## Versions retenues\n\n| Paquet | Reste en | Raison | Depuis |\n| --- | --- | --- | --- |\n${retenues.map((r) => `| ${r.join(" | ")} |`).join("\n")}\n\n`
+    : "";
+  writeFileSync(join(site, "CLAUDE.md"), `# Fiche\n\n${section ? enLigne : ""}${versionsRetenues}`);
   git(site, "commit", "-qam", "fiche : en ligne");
   return { site, commit };
 }
@@ -308,6 +311,50 @@ describe("sante.mjs : dépendances et versions", () => {
   test("npm outdated sans réponse : non vérifiées", async () => {
     const r = await sante(siteLivre().site, { FAUX_OUTDATED: "" });
     assert.match(ligne(r, "Versions"), /^⚠️ +Versions : non vérifiées/);
+  });
+});
+
+describe("sante.mjs : versions retenues", () => {
+  const aujourdhui = new Date().toISOString().slice(0, 10);
+  const ilYa = (jours) => new Date(Date.now() - jours * 86400000).toISOString().slice(0, 10);
+  const RETARD = {
+    eslint: { current: "9.39.5", wanted: "9.39.5", latest: "10.13.0" },
+    typescript: { current: "6.0.3", wanted: "6.0.3", latest: "7.0.2" },
+  };
+  test("version majeure retenue : plus signalée, mais mentionnée", async () => {
+    const { site } = siteLivre({
+      retenues: [
+        ["`eslint`", "9", "Extensions de Next.js pas prêtes", aujourdhui],
+        ["`typescript`", "6", "typescript-eslint ne lit pas TS 7", aujourdhui],
+      ],
+    });
+    const r = await sante(site, { FAUX_OUTDATED: fichier(RETARD) });
+    assert.equal(r.status, 0, r.stdout);
+    assert.match(ligne(r, "Versions"), /^✅ Versions : à jour \(2 retenue\(s\) : eslint en 9, typescript en 6\)$/);
+  });
+  test("mise à jour à l'intérieur de la version retenue : signalée", async () => {
+    const { site } = siteLivre({ retenues: [["eslint", "9", "Extensions pas prêtes", aujourdhui]] });
+    const retard = fichier({ eslint: { current: "9.39.5", wanted: "9.40.0", latest: "10.13.0" } });
+    const r = await sante(site, { FAUX_OUTDATED: retard });
+    assert.match(ligne(r, "Versions"), /^⚠️ +Versions : 1 mise\(s\) à jour disponible\(s\) : eslint 9\.39\.5 → 9\.40\.0 ; retenue\(s\) : eslint en 9$/);
+  });
+  test("paquet non retenu : toujours signalé", async () => {
+    const { site } = siteLivre({ retenues: [["eslint", "9", "Extensions pas prêtes", aujourdhui]] });
+    const r = await sante(site, { FAUX_OUTDATED: fichier(RETARD) });
+    assert.match(ligne(r, "Versions"), /typescript 6\.0\.3 → 7\.0\.2 \(version majeure\)/);
+    assert.doesNotMatch(ligne(r, "Versions"), /eslint 9/);
+  });
+  test("retenue depuis plus de 3 mois : à réexaminer", async () => {
+    const { site } = siteLivre({ retenues: [["eslint", "9", "Extensions pas prêtes", ilYa(100)]] });
+    const r = await sante(site, { FAUX_OUTDATED: fichier({ eslint: RETARD.eslint }) });
+    assert.match(r.stdout, /⚠️ +Versions : retenue de eslint en 9 depuis plus de 3 mois \(\d{4}-\d{2}-\d{2}\) : à réexaminer/);
+  });
+  test("retenue devenue inutile (dernière version dans la version retenue) : signalement normal", async () => {
+    const { site } = siteLivre({ retenues: [["react", "19", "Prudence", aujourdhui]] });
+    const retard = fichier({ react: { current: "19.2.8", wanted: "19.3.1", latest: "19.3.1" } });
+    const r = await sante(site, { FAUX_OUTDATED: retard });
+    // La retenue n'écarte rien : elle n'apparaît pas, la ligne s'arrête à la mise à jour
+    assert.match(ligne(r, "Versions"), /^⚠️ +Versions : 1 mise\(s\) à jour disponible\(s\) : react 19\.2\.8 → 19\.3\.1$/);
   });
 });
 

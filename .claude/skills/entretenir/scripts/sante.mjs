@@ -211,20 +211,66 @@ function dependances() {
   noter(1, `Dépendances : ${details.join(" ; ")}`);
 }
 
-/** Dépendances directes en retard sur leur dernière version. */
+/**
+ * Versions retenues : section « ## Versions retenues » de la fiche, où l'on note
+ * qu'un paquet reste dans une version majeure, pourquoi et depuis quand
+ * (| Paquet | Reste en | Raison | Depuis |). Décision prise avec l'utilisateur.
+ */
+function versionsRetenues() {
+  const debutR = lignesFiche.findIndex((l) => l.trim() === "## Versions retenues");
+  if (debutR === -1) return new Map();
+  const finR = lignesFiche.findIndex((l, i) => i > debutR && l.startsWith("## "));
+  const [tete = [], , ...rangs] = lignesFiche
+    .slice(debutR + 1, finR === -1 ? undefined : finR)
+    .filter((l) => l.trim().startsWith("|"))
+    .map((l) => l.trim().replace(/^\||\|$/g, "").split(/(?<!\\)\|/).map((c) => sansCode(c)));
+  const col = (nom) => tete.findIndex((c) => c.toLowerCase() === nom.toLowerCase());
+  return new Map(
+    rangs
+      .map((r) => [r[col("Paquet")], { majeur: Number(r[col("Reste en")]?.match(/^\d+/)?.[0]), depuis: r[col("Depuis")] }])
+      .filter(([nom, r]) => nom && Number.isInteger(r.majeur)),
+  );
+}
+
+// Au-delà, une décision d'attendre doit être réexaminée : elle ne doit pas
+// devenir permanente par oubli
+const RETENUE_MAX_JOURS = 90;
+
+/** Dépendances directes en retard sur leur dernière version, hors versions retenues. */
 function versions() {
+  const retenues = versionsRetenues();
+  for (const [nom, r] of retenues) {
+    const age = (Date.now() - new Date(r.depuis)) / 86400000;
+    if (age > RETENUE_MAX_JOURS) {
+      noter(1, `Versions : retenue de ${nom} en ${r.majeur} depuis plus de 3 mois (${r.depuis}) : à réexaminer`);
+    }
+  }
   const retard = npmJson("outdated", "--json");
   if (retard === null || typeof retard !== "object" || "error" in retard) {
     return noter(1, "Versions : non vérifiées (npm outdated n'a pas répondu)");
   }
-  const paquets = Object.entries(retard).filter(([, v]) => v && v.latest && v.current !== v.latest);
-  if (paquets.length === 0) return noter(0, "Versions : toutes les dépendances sont à jour");
   const majeur = (v) => String(v).split(".")[0];
-  const liste = paquets.map(([nom, v]) => {
+  const liste = [];
+  const gardees = [];
+  for (const [nom, v] of Object.entries(retard)) {
+    if (!v?.latest || v.current === v.latest) continue;
+    const retenue = retenues.get(nom);
+    if (retenue && Number(majeur(v.latest)) > retenue.majeur) {
+      // La version majeure suivante est écartée ; les mises à jour à l'intérieur
+      // de la version retenue (« wanted », d'après package.json) restent signalées
+      gardees.push(`${nom} en ${retenue.majeur}`);
+      if (v.wanted && v.current !== v.wanted) liste.push(`${nom} ${v.current} → ${v.wanted}`);
+      continue;
+    }
     const saut = majeur(v.current ?? "?") !== majeur(v.latest) ? " (version majeure)" : "";
-    return `${nom} ${v.current ?? "non installé"} → ${v.latest}${saut}`;
-  });
-  noter(1, `Versions : ${paquets.length} mise(s) à jour disponible(s) : ${liste.join(", ")}`);
+    liste.push(`${nom} ${v.current ?? "non installé"} → ${v.latest}${saut}`);
+  }
+  if (liste.length === 0) {
+    const mention = gardees.length ? ` (${gardees.length} retenue(s) : ${gardees.join(", ")})` : "";
+    return noter(0, gardees.length ? `Versions : à jour${mention}` : "Versions : toutes les dépendances sont à jour");
+  }
+  const mention = gardees.length ? ` ; retenue(s) : ${gardees.join(", ")}` : "";
+  noter(1, `Versions : ${liste.length} mise(s) à jour disponible(s) : ${liste.join(", ")}${mention}`);
 }
 
 // ── Contrôles ──────────────────────────────────────────────────────────

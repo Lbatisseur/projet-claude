@@ -35,7 +35,7 @@ node "<dossier-de-ce-skill>/scripts/sante.mjs" "<site>"
 | Déploiement (Vercel) | L'adresse sert un autre déploiement que celui noté par `/livrer` | Identifiant non noté, ou outil Vercel non connecté |
 | Code | | Commits sur le site depuis la livraison (hors fiche et cadrage) |
 | Dépendances | Faille élevée ou critique dans un paquet du site en ligne | Failles mineures, ou failles graves des outils de développement |
-| Versions | | Mises à jour disponibles (les versions majeures sont signalées) |
+| Versions | | Mises à jour disponibles (versions majeures signalées, hors versions retenues), retenue de plus de 3 mois |
 
 Code `2` : site jamais livré ou introuvable, montre le message. « Non vérifié »
 n'est jamais un succès : dis ce qui a manqué (connexion, outil non connecté).
@@ -65,6 +65,23 @@ Pour chaque constat, une action concrète, de la plus urgente à la moins urgent
   majeure** change des comportements : elle se décide avec l'utilisateur, une à la
   fois, en lisant ce qui change (guide de migration), et se valide par `/verifier`
   et, pour un site en ligne, `/auditer`.
+- **Choisir la version pertinente, pas la plus récente** : vérifie ce que les
+  autres paquets déclarent accepter (`npm view <paquet>@<version> peerDependencies`),
+  puis essaie la mise à jour sur une **copie** du site, palier par palier, avec
+  `/verifier` après chacun. Exemples réels : les types de Node suivent la version
+  de Node utilisée, pas la dernière ; TypeScript 7 faisait planter le lint.
+- **Décision d'attendre une version majeure** : note-la dans la section
+  `## Versions retenues` de la fiche du site (crée-la au besoin) :
+
+  ```markdown
+  | Paquet | Reste en | Raison | Depuis |
+  | --- | --- | --- | --- |
+  | `eslint` | 9 | <pourquoi on attend> | AAAA-MM-JJ |
+  ```
+
+  Le bilan ne signale plus la version majeure suivante de ce paquet, mais toujours
+  les mises à jour à l'intérieur de la version retenue, et demande de réexaminer la
+  retenue au bout de 3 mois.
 
 Ne lance aucune correction sans l'accord de l'utilisateur.
 
