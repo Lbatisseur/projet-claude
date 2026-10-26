@@ -313,7 +313,68 @@ chemin avec espace, erreurs d'usage. Validés par sabotage de 6 façons ; le scr
 ensuite servi pour de vrai à chaque audit du banc d'essai. L'orchestration complète est évaluée sur le banc d'essai de la
 Savonnerie Ondine ([résultats](sous-agents.md#banc-dessai-de-laudit-avant-livraison)).
 
+### `/livrer`
+
+Met un site en ligne et le tient à jour. Livrer, ici, ce n'est pas remettre du code
+au client (il n'y touche jamais) : c'est **mettre le site en ligne et le garder en
+bonne santé**, l'utilisateur gérant chaque site dans la durée.
+
+- Fichiers : [`SKILL.md`](../.claude/skills/livrer/SKILL.md),
+  [`scripts/prerequis.mjs`](../.claude/skills/livrer/scripts/prerequis.mjs),
+  [`procedures/vercel.md`](../.claude/skills/livrer/procedures/vercel.md)
+- Usage : `/livrer sites/boutique-dupont recette`, puis `… mise-en-ligne`
+
+| Étape | Ce qui se passe | Prérequis |
+|---|---|---|
+| **Recette** | Le site tourne sur une adresse provisoire de l'hébergeur, paiement en mode test, pour que le client l'essaie | Hébergeur choisi, code committé, `/verifier` vert |
+| **Mise en ligne** | Vrai domaine, vraies clés Stripe du client, nouvelle vérification sur l'adresse définitive | Tous les choix de mise en ligne faits, cadrage validé par le client, recette validée, `/auditer` non 🔴 |
+
+**Déroulé** : prérequis (script) → qualité (`/verifier` ou `/auditer`) →
+déploiement selon la procédure de l'hébergeur → vérification par le
+[`testeur-parcours`](sous-agents.md#testeur-parcours) sur l'**adresse publique** →
+section « En ligne » de la fiche du site (adresse, commit, date, résultat).
+
+**Choix de conception** :
+
+| Choix | Pourquoi |
+|---|---|
+| Hébergeur et domaine choisis **site par site**, dans la section « Mise en ligne » du cadrage | Décision de l'utilisateur : un petit client et une boutique à fort trafic n'ont pas les mêmes besoins. `/livrer` présente les options avec une recommandation adaptée quand un choix manque |
+| Une procédure par hébergeur, dans `procedures/`, écrite quand un site en a besoin | Ne pas coder d'avance quatre procédures dont trois ne serviraient peut-être jamais. Vercel d'abord |
+| Seul du code **committé** part en ligne | On sait toujours quel commit tourne, et on peut y revenir |
+| L'agent ne voit jamais une clé | Les clés sont saisies par l'utilisateur (`! … env add`), jamais avec `--value` ; les commandes qui les recopieraient sont bloquées ([hooks](hooks.md#protection-des-secrets-bloquant)) |
+| Chaque action sur un site en ligne est confirmée par l'utilisateur | Hook [`confirmer-production`](hooks.md#confirmation-des-actions-sur-un-site-en-ligne-confirmation), même en mode auto |
+| Déploiements automatiques depuis GitHub **coupés** (`vercel.json`) | `vercel link` tente de relier le dépôt : chaque push mettrait alors le site en ligne sans contrôle |
+| Vérification dans un navigateur après chaque déploiement | Un site qui marche en local peut casser en ligne (variable manquante, adresse) |
+
+**Le script de prérequis** vérifie, sans contacter aucun service : cahier des
+charges conforme, choix de mise en ligne faits (l'hébergeur pour la recette, tous
+pour la mise en ligne), procédure existante pour l'hébergeur, cadrage validé par le
+client (mise en ligne), et code du site entièrement committé (fichiers modifiés et
+nouveaux, dans le dossier du site seulement). **Tests** : 18 automatisés
+([`tests/skills/livrer-prerequis.test.mjs`](../tests/skills/livrer-prerequis.test.mjs)),
+sur de vrais dépôts git temporaires, validés par 7 sabotages : tous détectés.
+
+**Premier essai réel** (2026-10-26) : recette de `demo-maison-lumen` sur Vercel,
+offre gratuite (site de démonstration non commercial).
+
+1. Prérequis : le script a bloqué tant que la nouvelle section du cadrage n'était
+   pas committée, comme prévu.
+2. `vercel link` a créé le projet, puis **a tenté de relier le dépôt GitHub** (échec,
+   faute d'accès) et **a écrit un fichier de variables** contenant un jeton
+   temporaire de Vercel. Réponse : `vercel.json` qui coupe les déploiements
+   automatiques, ajouté à la procédure ; le fichier de jeton est exclu de git et
+   protégé par le hook.
+3. Déploiement confirmé par l'utilisateur : `status ● Ready`, adresse publique
+   `https://demo-maison-lumen.vercel.app` (`200`, page 404 en français).
+4. Vérification en ligne par le testeur : **0 critère conforme sur 23**, résultat
+   juste, puisque seule la page d'accueil de la démo existe. Le passage valide la
+   vérification sur une vraie adresse publique (téléphone et ordinateur, aucune
+   erreur JavaScript, ressources en `200`, aucun débordement) et mesure où en est
+   le site. La fiche du site note l'adresse, le commit `4799810` et ce résultat.
+
 ### À venir
 
-- `/livrer` : préparer la mise en ligne et la livraison au client
+- Maintenance des sites en ligne : contrôle régulier des dépendances, surveillance
+  de la disponibilité
+- Mise en ligne réelle (domaine, clés Stripe du client) sur le premier site client
 - Fonctionnalités e-commerce : catalogue, panier, paiement Stripe

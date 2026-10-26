@@ -89,7 +89,7 @@ flowchart LR
 
 ## Tests
 
-Les garde-fous et les scripts des skills sont eux-mêmes testés : 306 tests automatisés, sans dépendance à installer.
+Les garde-fous et les scripts des skills sont eux-mêmes testés : 406 tests automatisés, sans dépendance à installer.
 
 ```bash
 node --test "tests/**/*.test.mjs"
@@ -113,8 +113,8 @@ corrigée, il a attrapé une régression réelle introduite par une correction, 
 | 0 | Mise en place : Git, GitHub CLI, exclusion des secrets | ✅ |
 | 1 | Contexte agent : `CLAUDE.md` | ✅ |
 | 2 | Premier hook non bloquant : notifications sonores ([doc](docs/hooks.md)) | ✅ |
-| 3 | Skills ([doc](docs/skills.md)) : `/verifier` ✅ (dont failles des dépendances) · `/nouveau-site` ✅ · `/cadrage` ✅ · `/livrer` | 🚧 |
-| 4 | Hooks bloquants ([doc](docs/hooks.md)) : protection des secrets, suppressions, vérification avant fin de tâche · 120 tests | ✅ |
+| 3 | Skills ([doc](docs/skills.md)) : `/verifier` ✅ (dont failles des dépendances) · `/nouveau-site` ✅ · `/cadrage` ✅ · `/livrer` ✅ (recette en ligne : [démo](https://demo-maison-lumen.vercel.app)) | ✅ |
+| 4 | Hooks ([doc](docs/hooks.md)) : protection des secrets (dont outil Vercel), suppressions, vérification avant fin de tâche, confirmation des actions sur un site en ligne | ✅ |
 | 5 | Sous-agents ([doc](docs/sous-agents.md)) : relecteur sécurité et paiement · banc d'essai 15/15 et 11/11, 0 faux positif grave | ✅ |
 | 6 | Serveurs MCP ([doc](docs/mcp.md)) : navigateur Playwright (2 failles trouvées et fermées) · Stripe en mode test uniquement (OAuth, sans clé) | ✅ |
 | 7 | Workflow ([doc](docs/skills.md#auditer)) : `/auditer`, audit avant livraison par 3 agents en parallèle (sécurité, conformité, test dans le navigateur) · banc d'essai 🔴 puis 🟡 attendus et obtenus | ✅ |

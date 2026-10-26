@@ -8,11 +8,12 @@ Les hooks du projet sont déclarés dans [`.claude/settings.json`](../.claude/se
 et leurs scripts rangés dans [`.claude/hooks/`](../.claude/hooks/). Ils reçoivent
 l'événement en JSON sur leur entrée standard et répondent par leur code de sortie.
 
-## Deux familles
+## Trois familles
 
 | Famille | Effet | Exemple |
 |---|---|---|
 | **Non bloquant** | Observe ou signale, n'empêche rien | Jouer un son en fin de tâche |
+| **Confirmation** | Fait confirmer l'action par l'utilisateur, même en mode auto (réponse JSON `permissionDecision: "ask"`) | Mettre un site en ligne |
 | **Bloquant** | Peut refuser une action (code de sortie `2`, raison renvoyée à l'agent) | Interdire la lecture d'un fichier `.env` |
 
 Règle du projet : on commence par des hooks non bloquants, et une règle ne devient
@@ -27,6 +28,7 @@ sur la lecture ordinaire.
 | [`protect-secrets.mjs`](../.claude/hooks/protect-secrets.mjs) | `PreToolUse` (lecture, écriture, recherche, shell, outils MCP) | Bloquant | La fuite ou l'écrasement d'un secret |
 | [`block-permanent-delete.sh`](../.claude/hooks/block-permanent-delete.sh) | `PreToolUse` (shell) | Bloquant | Une perte de données irréversible |
 | [`stripe-test-only.mjs`](../.claude/hooks/stripe-test-only.mjs) | `PreToolUse` (outils MCP Stripe) | Bloquant | Une action de l'agent sur l'argent réel |
+| [`confirmer-production.mjs`](../.claude/hooks/confirmer-production.mjs) | `PreToolUse` (shell) | Confirmation | Une action sur un site en ligne que l'utilisateur n'a pas voulue |
 | [`require-verification.sh`](../.claude/hooks/require-verification.sh) | `Stop` | Bloquant | Un site rendu sans avoir été vérifié |
 | [`notify-sound.sh`](../.claude/hooks/notify-sound.sh) | `Stop`, `Notification` | Non bloquant | Devoir surveiller le terminal |
 
@@ -67,6 +69,47 @@ pas, `.ENV.LOCAL` ouvre le fichier `.env.local`. Vérifié avec un fichier canar
   les URL `file://`, où qu'ils soient dans l'argument ; le texte libre (saisie dans
   un formulaire, contenu d'un document) n'est pas examiné. Un nouveau serveur qui
   nommerait autrement un chemin de fichier doit être ajouté aux tests.
+
+**Outil Vercel** (ajouté avec [`/livrer`](skills.md#livrer), 2026-10-26) :
+
+- `vercel env pull` et `vercel pull` recopient les variables d'environnement du
+  site (clés Stripe…) en clair, dans un fichier dont le nom est libre
+  (`vercel env pull copie.txt`) : le nom ne trahit plus le secret. `vercel env run`
+  les injecte dans une commande quelconque (`vercel env run -- printenv`). Ces trois
+  commandes sont bloquées, sous toutes leurs formes (`npx vercel@…`, alias `vc`,
+  `npm exec`, majuscules, enchaînées après un `cd`). `vercel env ls` reste permis :
+  il n'affiche que les noms.
+- Le **jeton de connexion** de l'outil (dossier `com.vercel.cli`, dans
+  `~/Library/Application Support/` sur Mac) donne accès au compte : aucun outil ni
+  aucune commande ne peut le toucher.
+- Validé par 7 sabotages (oubli de `pull` seul, de `env run`, de l'alias `vc`, prise
+  en compte des majuscules, retrait de chaque contrôle du jeton, commande non
+  découpée en morceaux) : tous détectés.
+
+## Confirmation des actions sur un site en ligne (confirmation)
+
+Toute commande de l'outil Vercel qui touche un site en ligne attend la
+confirmation de l'utilisateur : déploiement en production (`--prod`,
+`--environment production`, `--target production`), `promote`, `rollback`,
+suppression (`remove`, `rm`, `project rm`), adresse (`alias`), domaine (`domains`,
+`dns`), variables d'environnement (`env add`, `env rm`, `env update`).
+
+- **Pourquoi pas un blocage** : mettre un site en ligne est le travail normal de
+  [`/livrer`](skills.md#livrer). Ce qui compte, c'est que l'utilisateur le décide à
+  chaque fois, même quand l'agent travaille en mode auto.
+- **Pourquoi pas une règle de permission** de `settings.json` : elles comparent le
+  début de la commande, qui varie (`npx -y vercel@65.2.0 deploy`, `cd site &&
+  vercel deploy`, `--prod` placé n'importe où). Le hook découpe la commande en
+  morceaux (`;`, `&&`, `|`) et examine chaque appel de l'outil.
+- **Une fausse alerte ne coûte qu'une question** ; un oubli publierait un site sans
+  que l'utilisateur l'ait voulu. En cas de doute, le hook demande.
+- **Vérifié en direct** : une commande `echo` contenant `vercel deploy --prod` a
+  bien affiché la demande de confirmation, sans redémarrer Claude Code. L'option
+  `--environment production`, apparue avec la version 65 de l'outil, a été ajoutée
+  après lecture de son aide : un nouvel outil se relit à chaque version.
+- Validé par 7 sabotages (`--prod` oublié, variables oubliées, casse, commande non
+  découpée, toute commande confirmée, refus au lieu de confirmation, alias `vc`) et
+  un de plus pour `--environment` : tous détectés.
 
 ## Stripe en mode test uniquement (bloquant)
 
@@ -187,7 +230,8 @@ node --test "tests/**/*.test.mjs"
 
 | Hook | Tests | Contenu |
 |---|---|---|
-| `protect-secrets` | 95 | 54 accès à bloquer (dont 13 via MCP et 18 contournements), 37 à laisser passer, 4 entrées invalides |
+| `protect-secrets` | 127 | 74 accès à bloquer (dont 13 via MCP, 18 contournements, 20 via l'outil Vercel), 49 à laisser passer, 4 entrées invalides |
+| `confirmer-production` | 45 | 25 commandes à faire confirmer, 16 à laisser passer sans question, 4 entrées invalides |
 | `block-permanent-delete` | 100 | 54 commandes à bloquer, 36 légitimes, 7 limites connues, 3 entrées invalides |
 | `stripe-test-only` | 28 | 14 appels hors mode test à bloquer (dont connecteur claude.ai), 10 à laisser passer, 4 entrées invalides |
 | `require-verification` | 14 | Sites vérifiés, modifiés, sans tampon, plusieurs sites, anti-boucle, fichier supprimé, renommé ou copié… |
