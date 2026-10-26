@@ -158,6 +158,15 @@ quand c'est le site lui-même qui remplit l'obligation (un critère d'acceptatio
 - **Hébergement chez Vercel**, l'hébergeur prévu par Next.js.
 - **Mesure d'audience sans cookie** si la cliente la souhaite (Q-05).
 
+## Mise en ligne
+
+| Élément                   | Choix                                                         | Raison                                                             |
+| ------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Hébergeur                 | Vercel, compte du prestataire, offre gratuite (Hobby)         | Site de démonstration, non commercial : l'offre gratuite le permet |
+| Nom de domaine            | À décider (Q-04) ; en attendant, adresse provisoire de Vercel | La cliente fictive n'a pas encore de domaine                       |
+| Paiement de l'hébergement | Aucun (offre gratuite)                                        | Démonstration du portfolio                                         |
+| Compte Stripe             | Compte de test du prestataire, jamais d'argent réel           | Site fictif                                                        |
+
 ## Questions ouvertes
 
 | ID   | Question                                                                                                                                         | À qui   | Bloquante |
