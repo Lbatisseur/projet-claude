@@ -46,6 +46,64 @@ with_timeout() {
   ' "$@"
 }
 
+# resume_audit : lit sur l'entrée le JSON de « npm audit --json » et affiche
+# « <critiques> <élevées> <mineures> <paquets graves> », ou rien si ce n'est pas un
+# rapport d'audit (registre injoignable, sortie tronquée…).
+resume_audit() {
+  node -e '
+    let r;
+    try { r = JSON.parse(require("fs").readFileSync(0, "utf8")); } catch { process.exit(0); }
+    const v = r?.metadata?.vulnerabilities;
+    if (!v) process.exit(0);
+    const graves = Object.entries(r.vulnerabilities ?? {})
+      .filter(([, x]) => x.severity === "high" || x.severity === "critical")
+      .map(([nom]) => nom);
+    console.log(v.critical ?? 0, v.high ?? 0, (v.moderate ?? 0) + (v.low ?? 0), graves.join(",") || "-");
+  '
+}
+
+# ── Dépendances ───────────────────────────────────────────────────────
+# Failles connues des paquets installés, d'après la base publique de npm.
+# Seules les failles graves (élevées, critiques) des paquets livrés avec le site
+# (« dependencies ») bloquent : ils tournent en ligne, face aux visiteurs. Les
+# outils de développement (tests, lint) ne tournent que sur la machine du
+# développeur : leurs failles sont signalées sans bloquer. Sans réponse du
+# registre (hors connexion), l'étape est notée « non vérifiée », sans bloquer.
+tmp_root="${TMPDIR:-/tmp}"
+log_dir=$(mktemp -d "${tmp_root%/}/verifier.XXXXXX")
+
+failed=0
+report=""
+failed_logs=()
+
+audit_timeout="${VERIFIER_AUDIT_TIMEOUT:-60}"
+if [ "$pm" != npm ]; then
+  report+="ℹ️  Dépendances — non vérifiées : l'audit des failles n'est prévu que pour npm"$'\n'
+else
+  start=$(date +%s)
+  with_timeout "$audit_timeout" npm audit --omit=dev --json >"$log_dir/audit-site.json" 2>/dev/null
+  read -r critiques elevees mineures graves < <(resume_audit <"$log_dir/audit-site.json")
+  elapsed=$(( $(date +%s) - start ))
+  if [ -z "$critiques" ]; then
+    report+="ℹ️  Dépendances — non vérifiées : npm audit n'a pas répondu (pas de connexion ?)"$'\n'
+  elif [ $((critiques + elevees)) -gt 0 ]; then
+    log="$log_dir/dependances.log"
+    with_timeout "$audit_timeout" npm audit --omit=dev >"$log" 2>&1
+    report+="❌ Dépendances — $((critiques + elevees)) faille(s) grave(s) dans les paquets du site en ligne (${graves//,/, }) — journal : $log"$'\n'
+    failed_logs+=("$log")
+    failed=1
+  else
+    note=""
+    [ "$mineures" -gt 0 ] && note+=" ; $mineures faille(s) mineure(s), voir npm audit"
+    with_timeout "$audit_timeout" npm audit --json >"$log_dir/audit-tout.json" 2>/dev/null
+    read -r dev_critiques dev_elevees _ dev_graves < <(resume_audit <"$log_dir/audit-tout.json")
+    if [ -n "$dev_critiques" ] && [ $((dev_critiques + dev_elevees)) -gt 0 ]; then
+      note+=" ; outils de développement : $((dev_critiques + dev_elevees)) faille(s) grave(s) (${dev_graves//,/, }), à mettre à jour"
+    fi
+    report+="✅ Dépendances (${elapsed}s)$note"$'\n'
+  fi
+fi
+
 # ── Vérifications ─────────────────────────────────────────────────────
 # Étapes, dans l'ordre : nom du script npm | libellé
 steps=(
@@ -56,12 +114,6 @@ steps=(
   "build|Build de production"
 )
 
-tmp_root="${TMPDIR:-/tmp}"
-log_dir=$(mktemp -d "${tmp_root%/}/verifier.XXXXXX")
-
-failed=0
-report=""
-failed_logs=()
 for step in "${steps[@]}"; do
   script="${step%%|*}"
   label="${step#*|}"

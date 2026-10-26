@@ -29,7 +29,10 @@ attendus), un agent pourrait relire le mauvais site ou lire ce qu'il ne doit pas
 2. **Qualité du code** : lance `/verifier` sur le site. S'il n'est pas entièrement
    vert, arrête-toi : un site qui ne passe pas ses propres contrôles n'est pas
    auditable. `/verifier` construit aussi la version de production, nécessaire à
-   l'étape suivante.
+   l'étape suivante. Il contrôle aussi les failles connues des dépendances, que les
+   relecteurs ne peuvent pas voir (ils n'exécutent rien) : reporte sa ligne
+   « Dépendances » dans la synthèse. « Non vérifiées » (ℹ️) devient un constat 🔵 ;
+   des failles signalées dans les outils de développement vont dans « Plus tard ».
 
 ## 2. Démarrer le site
 
@@ -105,6 +108,7 @@ client ne doit pas atterrir dans le dépôt public.
 | Domaine | Résultat |
 |---|---|
 | Qualité du code (/verifier) | ✅ |
+| Dépendances (/verifier) | <✅, avec ses mentions éventuelles · ou ℹ️ non vérifiées> |
 | Critères d'acceptation | <n> ✅ · <n> ❌ · <n> ⚠️ sur <total> |
 | Sécurité | <n> 🔴 · <n> 🟠 · <n> 🟡 · <n> 🔵 |
 | Conformité | <n> 🔴 · <n> 🟠 · <n> 🟡 · <n> 🔵 |
