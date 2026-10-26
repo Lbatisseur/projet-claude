@@ -150,6 +150,58 @@ describe("protect-secrets : laisse passer l'usage normal des outils MCP", () => 
   }
 });
 
+// Outil Vercel (ajouté avec /livrer, 2026-10-26) : certaines commandes recopient
+// les variables d'environnement du site (clés Stripe…) en clair, sur le disque ou
+// dans une autre commande ; le jeton de connexion de l'outil donne accès au compte.
+describe("protect-secrets : bloque ce qui expose les secrets de Vercel", () => {
+  const JETON = "/Users/x/Library/Application Support/com.vercel.cli/auth.json";
+  const cas = [
+    ["Bash", { command: "vercel env pull" }],
+    ["Bash", { command: "vercel env pull variables.txt" }],
+    ["Bash", { command: "npx vercel env pull --environment=production" }],
+    ["Bash", { command: "npx -y vercel@65.2.0 env pull copie.txt" }],
+    ["Bash", { command: "cd sites/demo && vercel env pull" }],
+    ["Bash", { command: "vercel --cwd sites/demo env pull" }],
+    ["Bash", { command: "VERCEL ENV PULL" }],
+    ["Bash", { command: "vercel pull --yes --environment=production" }],
+    ["Bash", { command: "npx vercel pull" }],
+    ["Bash", { command: "vercel env run -- printenv" }],
+    ["Bash", { command: "vercel env run -- node -e 'console.log(process.env)'" }],
+    ["Bash", { command: "vc env pull" }],
+    ["Bash", { command: "vc pull" }],
+    ["Bash", { command: "npm exec vercel -- env pull" }],
+    ["Bash", { command: `cat "${JETON}"` }],
+    ["Bash", { command: "cat ~/Library/Application\\ Support/com.vercel.cli/auth.json" }],
+    ["Bash", { command: "ls ~/.local/share/com.vercel.cli" }],
+    ["Read", { file_path: JETON }],
+    ["Grep", { pattern: "token", path: "/Users/x/Library/Application Support/com.vercel.cli" }],
+    ["Glob", { pattern: "**/com.vercel.cli/*" }],
+  ];
+  for (const [tool, input] of cas) {
+    test(`${tool} ${JSON.stringify(input)}`, () => run(tool, input).assertBlocked());
+  }
+});
+
+describe("protect-secrets : laisse passer l'usage normal de Vercel", () => {
+  const cas = [
+    ["Bash", { command: "npx vercel@65.2.0 deploy --yes" }],
+    ["Bash", { command: "vercel deploy --prod" }],
+    ["Bash", { command: "vercel env ls" }],
+    ["Bash", { command: "vercel env add STRIPE_SECRET_KEY production" }],
+    ["Bash", { command: "vercel link --yes --project demo-maison-lumen" }],
+    ["Bash", { command: "vercel inspect https://demo.vercel.app" }],
+    ["Bash", { command: "vercel --version" }],
+    ["Bash", { command: "vercel deploy && git pull" }],
+    ["Bash", { command: "git pull --rebase" }],
+    ["Bash", { command: "npm run build" }],
+    ["Read", { file_path: "/site/.vercel/project.json" }],
+    ["Read", { file_path: "/site/vercel.json" }],
+  ];
+  for (const [tool, input] of cas) {
+    test(`${tool} ${JSON.stringify(input)}`, () => run(tool, input).assertAllowed());
+  }
+});
+
 describe("protect-secrets : ne casse jamais la session", () => {
   for (const [nom, stdin] of [
     ["entrée vide", ""],

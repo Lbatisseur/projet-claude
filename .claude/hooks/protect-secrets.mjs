@@ -24,6 +24,21 @@ const ALLOWED_FILE = /^\.env\.(example|sample|template)$/i;
 const SECRET_IN_COMMAND =
   /(^|[\s"'=<>|;&(/`{,:])(\.env[\w.*?-]*|[\w.*?-]+\.(pem|key|p12|pfx)|id_(rsa|dsa|ecdsa|ed25519)(_sk)?|\.netrc)(?=$|[\s"'<>|;&)`},:])/gi;
 
+// Outil Vercel : « env pull » et « pull » recopient les variables d'environnement
+// du site (clés Stripe…) en clair dans un fichier au nom libre ; « env run » les
+// injecte dans une commande quelconque (printenv). Cherché dans chaque morceau de
+// la commande (séparé par ; & | ou retour à la ligne), sans tenir compte de la casse.
+const VERCEL_SECRET_COMMAND = /(^|[\s"'(`/])(vercel|vc)(@\S*)?\s(.*\s)?(env\s+(pull|run)|pull)(?=$|[\s"')`])/i;
+// Jeton de connexion de l'outil Vercel (~/Library/Application Support/com.vercel.cli/
+// sur Mac, ~/.local/share/com.vercel.cli/ sous Linux) : il donne accès au compte.
+const VERCEL_TOKEN_DIR = /com\.vercel\.cli/i;
+
+function vercelSecretCommand(command) {
+  return String(command)
+    .split(/[;&|\n]/)
+    .some((part) => VERCEL_SECRET_COMMAND.test(part));
+}
+
 function isSecretFile(path) {
   const name = basename(String(path));
   return SECRET_FILE.test(name) && !ALLOWED_FILE.test(name);
@@ -117,11 +132,24 @@ process.stdin.on("end", () => {
   if (tool === "Bash") {
     const found = secretsInCommand(input.command ?? "");
     if (found.length) deny(`la commande touche un fichier secret (${found.join(", ")}).`);
+    if (VERCEL_TOKEN_DIR.test(input.command ?? "")) {
+      deny("la commande touche le jeton de connexion de l'outil Vercel.");
+    }
+    if (vercelSecretCommand(input.command ?? "")) {
+      deny(
+        "« vercel env pull », « vercel pull » et « vercel env run » recopient les " +
+          "variables d'environnement du site (clés) en clair. Pour vérifier une " +
+          "variable, utiliser « vercel env ls », qui n'affiche que les noms.",
+      );
+    }
     process.exit(0);
   }
 
   for (const target of targetsOf(tool, input)) {
     if (!target) continue;
+    if (VERCEL_TOKEN_DIR.test(String(target))) {
+      deny(`${tool} sur le jeton de connexion de l'outil Vercel (${target}).`);
+    }
     // Un motif Glob/Grep comme "**/.env*" vise aussi des secrets
     const name = basename(String(target));
     if (ALLOWED_FILE.test(name)) continue;
