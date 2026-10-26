@@ -89,6 +89,15 @@ En ligne avant le 1er décembre.
 
 Aucun écart : catalogue dans un fichier du dépôt.
 
+## Mise en ligne
+
+| Élément | Choix | Raison |
+|---|---|---|
+| Hébergeur | Vercel, compte du prestataire | Petit trafic, aucun serveur à maintenir |
+| Nom de domaine | maison-test.fr, au nom de la cliente | C'est sa marque |
+| Paiement de l'hébergement | Prestataire, refacturé | Inclus dans la maintenance |
+| Compte Stripe | Compte de la cliente | Elle reçoit l'argent |
+
 ## Questions ouvertes
 
 | ID | Question | À qui | Bloquante |
@@ -135,6 +144,9 @@ describe("check-cadrage : accepte un cadrage complet", () => {
     const sansBloquante = abimer("| Cliente | Oui |", "| Cliente | Non |");
     assertConforme(controler(sansBloquante.replace("| Statut | Brouillon |", "| Statut | Validé par le client le 2026-10-10 |")));
   });
+  test("mise en ligne à décider, avec sa question ouverte", () => {
+    assertConforme(controler(abimer("| Hébergeur | Vercel, compte du prestataire |", "| Hébergeur | À décider (Q-01) |")));
+  });
   test("aucune question ouverte, rien de prévu plus tard", () => {
     const sansQuestions = VALIDE.replace(/\| Q-0[12] .*\n/g, "").replace(" (Q-01)", "");
     assertConforme(controler(sansQuestions.replace("| F-03 | Comptes clients |\n", "")));
@@ -171,6 +183,10 @@ describe("check-cadrage : refuse un cadrage incomplet ou incohérent", () => {
     ["question en double", () => abimer("| Q-02 |", "| Q-01 |"), /Q-01 en double/],
     ["renvoi à une question inexistante", () => abimer("(Q-01)", "(Q-07)"), /Référence à Q-07/],
     ["renvoi à une fonctionnalité inexistante", () => abimer("Marketplace multi-vendeurs.", "Voir F-12."), /Référence à F-12/],
+    ["section Mise en ligne supprimée", () => abimer("## Mise en ligne", "## Hébergement"), /Section manquante : ## Mise en ligne/],
+    ["ligne Mise en ligne supprimée", () => abimer("| Compte Stripe | Compte de la cliente | Elle reçoit l'argent |\n", ""), /Mise en ligne : ligne « Compte Stripe » absente/],
+    ["choix de mise en ligne vide", () => abimer("| Hébergeur | Vercel, compte du prestataire |", "| Hébergeur | |"), /Mise en ligne : « Hébergeur » sans choix/],
+    ["mise en ligne à décider sans question", () => abimer("| Hébergeur | Vercel, compte du prestataire |", "| Hébergeur | À décider |"), /« Hébergeur » à décider sans question ouverte/],
   ];
   for (const [nom, fabrique, motif] of cas) {
     test(nom, () => {

@@ -42,7 +42,24 @@ réponse par défaut raisonnable que l'utilisateur peut accepter d'un mot.
 2. **La vente** : parcours d'achat attendu, comptes clients ou non, moyens de
    paiement, livraison (zones, frais, retrait), retours.
 3. **Le cadre** : textes légaux disponibles, contenus et identité visuelle (qui
-   fournit quoi), délai, budget, nom de domaine, langues.
+   fournit quoi), délai, budget, langues, et la **mise en ligne** : hébergeur, nom
+   de domaine (lequel, à qui il appartient), qui paie l'hébergement, compte Stripe
+   du client.
+
+**Mise en ligne : un choix par site, jamais par habitude.** Propose une
+recommandation adaptée à ce site, avec sa raison, et les autres options :
+
+| Option | Convient quand |
+|---|---|
+| Vercel, compte du prestataire | Cas courant : le client ne veut gérer aucun compte technique, l'hébergement est refacturé dans la maintenance |
+| Vercel, compte du client | Le client veut payer et posséder son hébergement lui-même |
+| Petit serveur loué (VPS) | Budget très serré ou besoin particulier ; plus de maintenance pour le prestataire |
+| Cloudflare | Trafic très élevé ou budget nul ; certaines fonctions de Next.js y marchent moins bien |
+
+Le domaine appartient de préférence au client (c'est sa marque, il la garde s'il
+change de prestataire), le prestataire y ayant accès. Le compte Stripe est toujours
+celui du client : c'est lui qui reçoit l'argent. L'offre gratuite de Vercel
+interdit l'usage commercial : elle ne convient qu'aux démonstrations.
 
 Règles :
 
@@ -70,6 +87,9 @@ C'est ici que le cadrage apporte le plus : **défends un lancement petit**.
   refusé, adresse hors zone de livraison, consultation sur téléphone.
 - Note dans **Choix techniques** ce que le cadrage impose au-delà de la stack par
   défaut (base de données, interface d'administration…), avec la raison.
+- Remplis le tableau **Mise en ligne** (4 lignes, choix et raison). Un choix
+  inconnu s'écrit « À décider (Q-xx) » : il bloquera la mise en ligne, pas le
+  développement.
 
 Soumets ce découpage à l'utilisateur et intègre ses corrections avant d'écrire.
 

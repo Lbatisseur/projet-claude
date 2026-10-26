@@ -102,6 +102,15 @@ Aucun écart : catalogue et stock dans un fichier du code, panier dans le naviga
 Hébergement chez Vercel. Pas de webhook Stripe au lancement : la cliente suit ses
 commandes dans le tableau de bord Stripe et nous met à jour le stock à chaque fournée.
 
+## Mise en ligne
+
+| Élément                   | Choix                                             | Raison                                            |
+| ------------------------- | ------------------------------------------------- | ------------------------------------------------- |
+| Hébergeur                 | Vercel, compte du prestataire                     | Petit trafic, déjà cité dans les mentions légales |
+| Nom de domaine            | savonnerie-ondine.fr, au nom de la cliente (Q-01) | C'est sa marque                                   |
+| Paiement de l'hébergement | Prestataire, refacturé dans la maintenance        | La cliente ne gère aucun compte technique         |
+| Compte Stripe             | Compte de la cliente                              | Elle reçoit l'argent                              |
+
 ## Questions ouvertes
 
 | ID   | Question                                                         | À qui   | Bloquante |

@@ -23,6 +23,7 @@ const SECTIONS = [
   "Contenus et identité visuelle",
   "Contraintes",
   "Choix techniques",
+  "Mise en ligne",
   "Questions ouvertes",
   "Historique",
 ];
@@ -47,6 +48,8 @@ const OBLIGATIONS = [
   ["Prix TTC", /TTC/],
   ["Bouton de commande", /obligation de paiement/i],
 ];
+// Lignes du tableau « Mise en ligne » : choisies site par site, jamais par défaut
+const MISE_EN_LIGNE = ["Hébergeur", "Nom de domaine", "Paiement de l'hébergement", "Compte Stripe"];
 const STATUTS_LEGAUX = ["Fourni", "À rédiger", "À demander", "À intégrer", "Sans objet"];
 
 const chemin = process.argv[2];
@@ -168,6 +171,17 @@ for (const [nom, motif] of OBLIGATIONS) {
   if (!rangee) signaler(`Obligation légale absente : ${nom}`);
   else if (!STATUTS_LEGAUX.includes(rangee[1] ?? "")) {
     signaler(`Obligation « ${nom} » : statut « ${rangee[1] ?? ""} » invalide (${STATUTS_LEGAUX.join(", ")})`);
+  }
+}
+
+// 6 bis. Mise en ligne : chaque choix est fait, ou renvoie à une question ouverte
+const miseEnLigne = tableau(section("Mise en ligne"));
+for (const element of MISE_EN_LIGNE) {
+  const rangee = miseEnLigne.find((r) => r[0] === element);
+  if (!rangee) signaler(`Mise en ligne : ligne « ${element} » absente`);
+  else if (!rangee[1]) signaler(`Mise en ligne : « ${element} » sans choix (écrire « À décider (Q-xx) » si c'est le cas)`);
+  else if (/^À décider/i.test(rangee[1]) && !/\bQ-\d{2,}\b/.test(rangee[1])) {
+    signaler(`Mise en ligne : « ${element} » à décider sans question ouverte (Q-xx)`);
   }
 }
 

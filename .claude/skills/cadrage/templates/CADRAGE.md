@@ -87,6 +87,19 @@ quand c'est le site lui-même qui remplit l'obligation (un critère d'acceptatio
 <!-- Ce que le cadrage impose au-delà de la stack par défaut (base de données,
 interface d'administration…), avec la raison. -->
 
+## Mise en ligne
+
+<!-- Choisi pour CE site, avec une recommandation adaptée (budget, trafic, autonomie
+du client), jamais par habitude. Inconnu : « À décider (Q-xx) ». Bloque la mise en
+ligne, pas le développement. Lu par /livrer. -->
+
+| Élément | Choix | Raison |
+|---|---|---|
+| Hébergeur | | |
+| Nom de domaine | | |
+| Paiement de l'hébergement | | |
+| Compte Stripe | | |
+
 ## Questions ouvertes
 
 | ID | Question | À qui | Bloquante |
