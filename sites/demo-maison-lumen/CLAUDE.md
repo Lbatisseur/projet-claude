@@ -48,9 +48,9 @@ Prettier · ESLint strict · Vitest. Paiement : Stripe (ajouté quand nécessair
 
 Tenu à jour par `/livrer` : une ligne par étape, remplacée à chaque redéploiement.
 
-| Étape   | Adresse                              | Hébergeur                                           | Commit    | Date       | Vérification                                                                       |
-| ------- | ------------------------------------ | --------------------------------------------------- | --------- | ---------- | ---------------------------------------------------------------------------------- |
-| Recette | https://demo-maison-lumen.vercel.app | Vercel, projet `demo-maison-lumen` (offre gratuite) | `4799810` | 2026-10-26 | 0 ✅ · 23 ❌ sur 23 : seule la page d'accueil existe, fonctionnalités à développer |
+| Étape   | Adresse                              | Hébergeur                                           | Déploiement                        | Commit    | Date       | Vérification                                                                       |
+| ------- | ------------------------------------ | --------------------------------------------------- | ---------------------------------- | --------- | ---------- | ---------------------------------------------------------------------------------- |
+| Recette | https://demo-maison-lumen.vercel.app | Vercel, projet `demo-maison-lumen` (offre gratuite) | `dpl_E2qAasvsHqbvo7jZX7apPB72dvfV` | `4799810` | 2026-10-26 | 0 ✅ · 23 ❌ sur 23 : seule la page d'accueil existe, fonctionnalités à développer |
 
 ## Journal des décisions
 
