@@ -6,6 +6,9 @@
 #                  2 si le site ne peut pas être vérifié (voir le message).
 
 timeout_s="${VERIFIER_TIMEOUT:-600}"
+# Dossier du script, résolu avant tout cd : appelé par un chemin relatif
+# (.claude/skills/…), il ne serait plus retrouvé depuis le dossier du site.
+script_dir="$(cd "$(dirname "$0")" && pwd)"
 
 # Arrêt immédiat, avec un message clair, quand la vérification est impossible
 abort() { echo "❌ Vérification impossible : $1" >&2; exit 2; }
@@ -160,7 +163,7 @@ if [ $failed -eq 0 ]; then
   # Tampon lu par le hook Stop (require-verification) : ce site est vérifié à cette
   # date, dans cet état (empreinte : liste de ses fichiers et de leurs tailles).
   # Seulement pour les sites du dépôt (sites/<identifiant>).
-  root="$(git -C "$(dirname "$0")" rev-parse --show-toplevel 2>/dev/null)"
+  root="$(git -C "$script_dir" rev-parse --show-toplevel 2>/dev/null)"
   if [ -n "$root" ] && [ "$(dirname "$(pwd)")" = "$root/sites" ]; then
     mkdir -p "$root/.claude/state/verifier" &&
       "$root/.claude/hooks/require-verification.sh" --empreinte "$(pwd)" \
