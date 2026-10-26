@@ -52,13 +52,25 @@ Tenu à jour par `/livrer` : une ligne par étape, remplacée à chaque redéplo
 | ------- | ------------------------------------ | --------------------------------------------------- | ---------------------------------- | --------- | ---------- | ---------------------------------------------------------------------------------- |
 | Recette | https://demo-maison-lumen.vercel.app | Vercel, projet `demo-maison-lumen` (offre gratuite) | `dpl_E2qAasvsHqbvo7jZX7apPB72dvfV` | `4799810` | 2026-10-26 | 0 ✅ · 23 ❌ sur 23 : seule la page d'accueil existe, fonctionnalités à développer |
 
+## Versions retenues
+
+Décidées avec l'utilisateur ; `/entretenir` ne signale plus la version majeure
+suivante, et demande de réexaminer chaque retenue après 3 mois.
+
+| Paquet        | Reste en | Raison                                                                                                     | Depuis     |
+| ------------- | -------- | ---------------------------------------------------------------------------------------------------------- | ---------- |
+| `eslint`      | 9        | Trois extensions de la configuration de Next.js (import, jsx-a11y, react) n'acceptent pas encore ESLint 10 | 2026-10-26 |
+| `typescript`  | 6        | `typescript-eslint` ne lit pas TypeScript 7 (réécrit) : le lint planterait                                 | 2026-10-26 |
+| `@types/node` | 24       | Les types doivent correspondre à la version de Node utilisée (24 LTS)                                      | 2026-10-26 |
+
 ## Journal des décisions
 
-| Date       | Décision                                                       | Raison                                                                 |
-| ---------- | -------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| 2026-09-29 | Création du site avec `/nouveau-site`                          | —                                                                      |
-| 2026-10-01 | Page 404 en français (`not-found.tsx`)                         | La page par défaut de Next.js est en anglais                           |
-| 2026-10-01 | Texte secondaire en `zinc-400` en mode sombre                  | Contraste 4,10:1 → 7,55:1 (minimum WCAG AA : 4,5:1)                    |
-| 2026-10-01 | Polices Geist retirées, police système (Arial)                 | Téléchargées mais jamais affichées ; police à choisir avec le client   |
-| 2026-10-10 | Cadrage v1 avec `/cadrage` : 8 fonctionnalités au lancement    | Gestion des produits par la cliente reportée : 4 nouveautés par saison |
-| 2026-10-26 | `vercel.json` : déploiements automatiques depuis GitHub coupés | Le site ne part en ligne que par `/livrer`, après ses contrôles        |
+| Date       | Décision                                                       | Raison                                                                  |
+| ---------- | -------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| 2026-09-29 | Création du site avec `/nouveau-site`                          | —                                                                       |
+| 2026-10-01 | Page 404 en français (`not-found.tsx`)                         | La page par défaut de Next.js est en anglais                            |
+| 2026-10-01 | Texte secondaire en `zinc-400` en mode sombre                  | Contraste 4,10:1 → 7,55:1 (minimum WCAG AA : 4,5:1)                     |
+| 2026-10-01 | Polices Geist retirées, police système (Arial)                 | Téléchargées mais jamais affichées ; police à choisir avec le client    |
+| 2026-10-10 | Cadrage v1 avec `/cadrage` : 8 fonctionnalités au lancement    | Gestion des produits par la cliente reportée : 4 nouveautés par saison  |
+| 2026-10-26 | `vercel.json` : déploiements automatiques depuis GitHub coupés | Le site ne part en ligne que par `/livrer`, après ses contrôles         |
+| 2026-10-26 | React 19.3.1, Vitest 5, TypeScript 6, types de Node 24         | Bilan `/entretenir` ; versions essayées sur une copie, `/verifier` vert |
