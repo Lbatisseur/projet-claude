@@ -396,7 +396,7 @@ normal (`/verifier`, commit, `/livrer`).
 | Déploiement (Vercel) | L'adresse sert un autre déploiement que celui noté par `/livrer` | Identifiant non noté, outil non connecté |
 | Code | | Commits depuis la livraison (hors fiche et cadrage) |
 | Dépendances | Faille grave dans le site en ligne | Failles mineures, ou graves dans les outils de développement |
-| Versions | | Mises à jour disponibles, versions majeures signalées |
+| Versions | | Mises à jour disponibles, versions majeures signalées (hors versions retenues) ; retenue de plus de 3 mois |
 
 **Le contrôle du déploiement** : Vercel ne connaît pas le commit d'un déploiement
 fait depuis l'outil en ligne de commande, mais lui donne un identifiant unique
@@ -430,6 +430,25 @@ de sortie) : tous détectés.
 valable 32 jours, adresse servant bien le déploiement livré, aucune faille ; 6 mises
 à jour disponibles, dont 4 majeures (TypeScript 7, ESLint 10, Vitest 5, types de
 Node).
+
+**Versions retenues** : la plus récente n'est pas toujours la plus pertinente. Le
+premier bilan proposait 6 mises à jour ; chacune a été essayée sur une copie de la
+démo, palier par palier, avec `/verifier` :
+
+| Paquet | Proposée | Retenue | Pourquoi |
+|---|---|---|---|
+| React | 19.3.1 | 19.3.1 | Même version majeure |
+| Types de Node | 26 | 24 | Ils doivent correspondre au Node utilisé (24 LTS) |
+| Vitest | 5.0.5 | 5.0.5 | Possible depuis le passage à Node 24 ; exige les types de Node 22 ou 24 |
+| TypeScript | 7.0.2 | 6.0.3 | `typescript-eslint` ne lit pas TypeScript 7 (réécrit) : le lint plantait |
+| ESLint | 10 | 9 | Trois extensions de la configuration de Next.js le refusent (arbre de dépendances « invalide ») ; le lint passait sur la démo, presque vide, mais rien ne le garantit sur un vrai site |
+
+Une décision d'attendre se note dans la section « Versions retenues » de la fiche du
+site (paquet, version gardée, raison, date). Le bilan ne signale plus la version
+majeure suivante, mais toujours les mises à jour à l'intérieur de la version gardée,
+et demande de réexaminer la retenue au bout de 3 mois : attendre ne doit pas devenir
+permanent par oubli. 5 tests de plus (30), validés par 5 sabotages ; le premier a
+laissé passer une retenue devenue inutile, le test a été resserré.
 
 ### À venir
 

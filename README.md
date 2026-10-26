@@ -84,12 +84,12 @@ flowchart LR
 | Outil | Version | Usage |
 |---|---|---|
 | [Claude Code](https://claude.com/claude-code) | 2.x | Agent de développement |
-| [Node.js](https://nodejs.org) | ≥ 20 | Exécution des sites Next.js |
+| [Node.js](https://nodejs.org) | 24 (LTS), npm 11 | Exécution des sites Next.js et des outils (Vitest 5 exige au moins Node 22.12) |
 | [Git](https://git-scm.com) + [GitHub CLI](https://cli.github.com) | — | Versionnement et publication |
 
 ## Tests
 
-Les garde-fous et les scripts des skills sont eux-mêmes testés : 431 tests automatisés, sans dépendance à installer.
+Les garde-fous et les scripts des skills sont eux-mêmes testés : 436 tests automatisés, sans dépendance à installer.
 
 ```bash
 node --test "tests/**/*.test.mjs"
