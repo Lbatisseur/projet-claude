@@ -332,7 +332,8 @@ bonne santé**, l'utilisateur gérant chaque site dans la durée.
 **Déroulé** : prérequis (script) → qualité (`/verifier` ou `/auditer`) →
 déploiement selon la procédure de l'hébergeur → vérification par le
 [`testeur-parcours`](sous-agents.md#testeur-parcours) sur l'**adresse publique** →
-section « En ligne » de la fiche du site (adresse, commit, date, résultat).
+section « En ligne » de la fiche du site (adresse, identifiant du déploiement, commit,
+date, résultat), que lit [`/entretenir`](#entretenir).
 
 **Choix de conception** :
 
@@ -372,9 +373,67 @@ offre gratuite (site de démonstration non commercial).
    erreur JavaScript, ressources en `200`, aucun débordement) et mesure où en est
    le site. La fiche du site note l'adresse, le commit `4799810` et ce résultat.
 
+### `/entretenir`
+
+Bilan de santé de tous les sites en ligne. Un site vieillit même quand personne n'y
+touche : une faille est publiée dans une dépendance, un certificat ne se renouvelle
+pas, quelqu'un déploie à côté. `/entretenir` le voit avant le client. Comme
+`/auditer`, il constate et ne corrige rien : chaque correction suit le circuit
+normal (`/verifier`, commit, `/livrer`).
+
+- Fichiers : [`SKILL.md`](../.claude/skills/entretenir/SKILL.md),
+  [`scripts/sante.mjs`](../.claude/skills/entretenir/scripts/sante.mjs)
+- Usage : `/entretenir` (tous les sites dont la fiche a une section « En ligne »),
+  ou `/entretenir sites/boutique-dupont` ; à lancer chaque semaine
+- **Pourquoi un skill séparé de `/livrer`** (choix de l'utilisateur) : livrer est
+  ponctuel et porte sur un site ; entretenir est régulier, porte sur tous les sites
+  et produit un bilan, pas une mise en ligne.
+
+| Contrôle | ❌ à corriger | ⚠️ à surveiller |
+|---|---|---|
+| Disponibilité | Erreur, injoignable, pas de réponse en 15 s | Plus de 3 s |
+| Certificat HTTPS | Expiré, ou moins de 7 jours | Moins de 21 jours (renouvellement en échec : il se fait normalement 30 jours avant), ou site en HTTP |
+| Déploiement (Vercel) | L'adresse sert un autre déploiement que celui noté par `/livrer` | Identifiant non noté, outil non connecté |
+| Code | | Commits depuis la livraison (hors fiche et cadrage) |
+| Dépendances | Faille grave dans le site en ligne | Failles mineures, ou graves dans les outils de développement |
+| Versions | | Mises à jour disponibles, versions majeures signalées |
+
+**Le contrôle du déploiement** : Vercel ne connaît pas le commit d'un déploiement
+fait depuis l'outil en ligne de commande, mais lui donne un identifiant unique
+(`dpl_…`). `/livrer` le note dans la colonne « Déploiement » de la fiche ;
+`/entretenir` demande à Vercel quel déploiement sert l'adresse et compare. Un écart
+signale une mise en ligne faite en dehors de `/livrer`.
+
+**Tests** : 25 automatisés
+([`tests/skills/entretenir-sante.test.mjs`](../tests/skills/entretenir-sante.test.mjs))
+contre de **vrais serveurs web** locaux : HTTP, et HTTPS avec des certificats
+fabriqués par `openssl` qui expirent quand le test le veut (dans 90, 14 ou 3 jours,
+ou déjà expirés), un serveur en erreur, un lent, un muet, un port fermé ; vrai dépôt
+git ; faux `npm` et faux outil Vercel pour travailler sans réseau. Validés par 10
+sabotages (seuils du certificat, lenteur, HTTP, autre déploiement, documents comptés
+comme du code, gravité des failles, outils de développement, versions majeures, code
+de sortie) : tous détectés.
+
+**Ce que les tests et le premier essai ont corrigé** :
+
+1. **Fausse alerte « code non livré »** sur la démo : le commit qui note la livraison
+   dans la fiche venait après le commit livré. La fiche et le cadrage ne changent
+   rien au site : ils sont exclus du contrôle.
+2. **Message inutile** quand un site est injoignable : `fetch` ne dit que « fetch
+   failed ». Le script remonte la chaîne des causes (`ECONNREFUSED`, `ENOTFOUND`…).
+   Le premier test choisissait d'ailleurs le port 1, que `fetch` refuse par principe
+   (« bad port ») : il ne simulait pas un site injoignable.
+3. OpenSSL 3.5 refuse une durée de validité nulle : les certificats de test sont
+   fabriqués avec des dates explicites.
+
+**Premier bilan réel** (2026-10-26, démo) : site disponible en 143 ms, certificat
+valable 32 jours, adresse servant bien le déploiement livré, aucune faille ; 6 mises
+à jour disponibles, dont 4 majeures (TypeScript 7, ESLint 10, Vitest 5, types de
+Node).
+
 ### À venir
 
-- Maintenance des sites en ligne : contrôle régulier des dépendances, surveillance
-  de la disponibilité
+- Lancer `/entretenir` automatiquement (tâche planifiée, notification)
+- Autres contrôles d'entretien selon les besoins
 - Mise en ligne réelle (domaine, clés Stripe du client) sur le premier site client
 - Fonctionnalités e-commerce : catalogue, panier, paiement Stripe

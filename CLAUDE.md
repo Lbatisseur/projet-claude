@@ -56,6 +56,8 @@ justifié et noté dans la documentation du site concerné.
   ni le skill `vercel:deploy` du plugin Vercel, qui saute nos contrôles). Avant la
   mise en ligne, `/auditer` : jamais sur un verdict 🔴 ; après corrections, relancer
   l'audit complet.
+- **Entretien** : `/entretenir` chaque semaine sur les sites en ligne ; il constate,
+  les corrections repassent par `/verifier` et `/livrer`.
 - **Sécurité** : toute modification touchant au paiement, aux routes API, aux Server
   Actions, aux formulaires, à l'authentification ou aux secrets est relue par le
   sous-agent `relecteur-securite` ; corriger les constats 🔴 et 🟠 avant de conclure.
