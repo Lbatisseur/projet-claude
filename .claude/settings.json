@@ -1,4 +1,7 @@
 {
+  "env": {
+    "VERCEL_PLUGIN_TELEMETRY": "off"
+  },
   "permissions": {
     "ask": [
       "mcp__stripe__stripe_api_write",
