@@ -9,7 +9,7 @@ aussi de nom de projet chez Vercel.
 L'outil en ligne de commande de Vercel, lancé par `npx` dans une version fixée :
 
 ```bash
-npx -y vercel@65.2.0 <commande> --cwd "<site>"
+npx -y vercel@65.14.0 <commande> --cwd "<site>"
 ```
 
 Avant chaque livraison, compare avec la dernière version (`npm view vercel
@@ -23,11 +23,11 @@ jour ce fichier.
 ## 1. Connexion
 
 ```bash
-npx -y vercel@65.2.0 whoami
+npx -y vercel@65.14.0 whoami
 ```
 
 Non connecté : demande à l'utilisateur de taper lui-même
-`! npx -y vercel@65.2.0 login` (connexion dans le navigateur ; tu ne vois jamais ses
+`! npx -y vercel@65.14.0 login` (connexion dans le navigateur ; tu ne vois jamais ses
 identifiants), puis relance `whoami`. Vérifie que le compte est celui prévu par la
 ligne « Hébergeur » du cadrage (compte du prestataire, ou compte du client).
 
@@ -36,7 +36,7 @@ ligne « Hébergeur » du cadrage (compte du prestataire, ou compte du client).
 Premier déploiement seulement (sinon `<site>/.vercel/project.json` existe déjà) :
 
 ```bash
-npx -y vercel@65.2.0 link --yes --project <identifiant> --cwd "<site>"
+npx -y vercel@65.14.0 link --yes --project <identifiant> --cwd "<site>"
 ```
 
 Il crée le projet chez Vercel et le lien local `<site>/.vercel/` (exclu de git par
@@ -67,14 +67,14 @@ Liste les variables nécessaires d'après `<site>/.env.example`, puis celles dé
 connues de Vercel :
 
 ```bash
-npx -y vercel@65.2.0 env ls --environment production --cwd "<site>"
+npx -y vercel@65.14.0 env ls --environment production --cwd "<site>"
 ```
 
 Pour chaque variable manquante, donne à l'utilisateur la commande à taper lui-même,
 et ce qu'il doit y mettre :
 
 ```
-! npx -y vercel@65.2.0 env add <NOM> production --sensitive --cwd "<site>"
+! npx -y vercel@65.14.0 env add <NOM> production --sensitive --cwd "<site>"
 ```
 
 | Variable | Recette | Mise en ligne |
@@ -88,7 +88,7 @@ demande de redéployer pour qu'elle soit prise en compte.
 ## 4. Déployer
 
 ```bash
-npx -y vercel@65.2.0 deploy --prod --yes --cwd "<site>"
+npx -y vercel@65.14.0 deploy --prod --yes --cwd "<site>"
 ```
 
 Le hook `confirmer-production` demande la confirmation de l'utilisateur. Piloté
@@ -96,7 +96,7 @@ par un agent, l'outil répond en JSON : il donne l'adresse du déploiement et
 l'adresse stable du site, `https://<identifiant>.vercel.app`. Vérifie ensuite :
 
 ```bash
-npx -y vercel@65.2.0 inspect <adresse-du-déploiement> --cwd "<site>"
+npx -y vercel@65.14.0 inspect <adresse-du-déploiement> --cwd "<site>"
 curl -s -o /dev/null -w "%{http_code}\n" https://<identifiant>.vercel.app
 ```
 
@@ -113,8 +113,8 @@ version de Node) : corrige-la, ne contourne jamais une vérification.
 ## 5. Domaine (mise en ligne seulement)
 
 ```bash
-npx -y vercel@65.2.0 domains add <domaine> <identifiant> --cwd "<site>"
-npx -y vercel@65.2.0 domains inspect <domaine>
+npx -y vercel@65.14.0 domains add <domaine> <identifiant> --cwd "<site>"
+npx -y vercel@65.14.0 domains inspect <domaine>
 ```
 
 `inspect` donne les enregistrements DNS à créer chez le registraire du domaine (là
@@ -128,7 +128,7 @@ heures), puis redéploie.
 Si la vérification en ligne échoue sur un site déjà ouvert au public :
 
 ```bash
-npx -y vercel@65.2.0 rollback --cwd "<site>"
+npx -y vercel@65.14.0 rollback --cwd "<site>"
 ```
 
 Le site revient instantanément à la version précédente ; la nouvelle reste

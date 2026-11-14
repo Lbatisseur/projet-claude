@@ -21,7 +21,7 @@ describe("confirmer-production : demande confirmation", () => {
   const cas = [
     "vercel deploy --prod",
     "vercel --prod",
-    "npx vercel@65.2.0 deploy --prod --yes",
+    "npx vercel@65.14.0 deploy --prod --yes",
     "npx -y vercel deploy --prod",
     "cd sites/demo && vercel deploy --prod",
     "vercel deploy --cwd sites/demo --prod",

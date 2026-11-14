@@ -22,7 +22,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { connect } from "node:tls";
 
-const VERCEL = "vercel@65.2.0"; // même version que la procédure Vercel de /livrer
+const VERCEL = "vercel@65.14.0"; // même version que la procédure Vercel de /livrer
 // Au-delà, une page d'accueil est lente pour un visiteur (réglable pour les tests)
 const LENT_MS = Number(process.env.ENTRETENIR_LENT_MS ?? 3000);
 const DELAI_MS = Number(process.env.ENTRETENIR_DELAI_MS ?? 15000);

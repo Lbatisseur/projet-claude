@@ -98,7 +98,7 @@ suppression (`remove`, `rm`, `project rm`), adresse (`alias`), domaine (`domains
   [`/livrer`](skills.md#livrer). Ce qui compte, c'est que l'utilisateur le décide à
   chaque fois, même quand l'agent travaille en mode auto.
 - **Pourquoi pas une règle de permission** de `settings.json` : elles comparent le
-  début de la commande, qui varie (`npx -y vercel@65.2.0 deploy`, `cd site &&
+  début de la commande, qui varie (`npx -y vercel@65.14.0 deploy`, `cd site &&
   vercel deploy`, `--prod` placé n'importe où). Le hook découpe la commande en
   morceaux (`;`, `&&`, `|`) et examine chaque appel de l'outil.
 - **Une fausse alerte ne coûte qu'une question** ; un oubli publierait un site sans

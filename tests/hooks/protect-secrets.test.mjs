@@ -159,7 +159,7 @@ describe("protect-secrets : bloque ce qui expose les secrets de Vercel", () => {
     ["Bash", { command: "vercel env pull" }],
     ["Bash", { command: "vercel env pull variables.txt" }],
     ["Bash", { command: "npx vercel env pull --environment=production" }],
-    ["Bash", { command: "npx -y vercel@65.2.0 env pull copie.txt" }],
+    ["Bash", { command: "npx -y vercel@65.14.0 env pull copie.txt" }],
     ["Bash", { command: "cd sites/demo && vercel env pull" }],
     ["Bash", { command: "vercel --cwd sites/demo env pull" }],
     ["Bash", { command: "VERCEL ENV PULL" }],
@@ -184,7 +184,7 @@ describe("protect-secrets : bloque ce qui expose les secrets de Vercel", () => {
 
 describe("protect-secrets : laisse passer l'usage normal de Vercel", () => {
   const cas = [
-    ["Bash", { command: "npx vercel@65.2.0 deploy --yes" }],
+    ["Bash", { command: "npx vercel@65.14.0 deploy --yes" }],
     ["Bash", { command: "vercel deploy --prod" }],
     ["Bash", { command: "vercel env ls" }],
     ["Bash", { command: "vercel env add STRIPE_SECRET_KEY production" }],
