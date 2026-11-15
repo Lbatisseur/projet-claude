@@ -70,12 +70,28 @@ connues de Vercel :
 npx -y vercel@65.14.0 env ls --environment production --cwd "<site>"
 ```
 
-Pour chaque variable manquante, donne à l'utilisateur la commande à taper lui-même,
-et ce qu'il doit y mettre :
+Pour chaque **clé secrète** manquante, l'utilisateur copie la clé (tableau de bord
+Stripe, Resend…), puis tape lui-même cette commande, qui la lit dans son
+presse-papiers sans l'afficher :
 
 ```
-! npx -y vercel@65.14.0 env add <NOM> production --sensitive --cwd "<site>"
+! pbpaste | npx -y vercel@65.14.0 env add <NOM> --environment production --sensitive --yes --cwd "<site>"
 ```
+
+Lancée avec `!`, la commande n'a pas de terminal interactif : sans valeur sur
+l'entrée standard, Vercel refuse (« missing_value ») au lieu de la demander
+(constaté le 2026-11-15 avec la 65.14.0). Après l'ajout, rappelle-lui de copier
+autre chose pour vider son presse-papiers.
+
+Une valeur **non secrète** (adresse email, adresse du site) peut être ajoutée
+par toi, en clair sur l'entrée standard :
+
+```bash
+printf '%s' '<valeur>' | npx -y vercel@65.14.0 env add <NOM> --environment production --yes --cwd "<site>"
+```
+
+Contrôle ensuite avec `env ls` que chaque variable existe : une commande qui
+échoue ne l'affiche pas toujours clairement à l'utilisateur.
 
 | Variable | Recette | Mise en ligne |
 |---|---|---|

@@ -350,7 +350,7 @@ date, résultat), que lit [`/entretenir`](#entretenir).
 | Hébergeur et domaine choisis **site par site**, dans la section « Mise en ligne » du cadrage | Décision de l'utilisateur : un petit client et une boutique à fort trafic n'ont pas les mêmes besoins. `/livrer` présente les options avec une recommandation adaptée quand un choix manque |
 | Une procédure par hébergeur, dans `procedures/`, écrite quand un site en a besoin | Ne pas coder d'avance quatre procédures dont trois ne serviraient peut-être jamais. Vercel d'abord |
 | Seul du code **committé** part en ligne | On sait toujours quel commit tourne, et on peut y revenir |
-| L'agent ne voit jamais une clé | Les clés sont saisies par l'utilisateur (`! … env add`), jamais avec `--value` ; les commandes qui les recopieraient sont bloquées ([hooks](hooks.md#protection-des-secrets-bloquant)) |
+| L'agent ne voit jamais une clé | L'utilisateur copie la clé puis la transmet lui-même à l'hébergeur depuis son presse-papiers (`! pbpaste \| … env add`), jamais avec `--value` ; les commandes qui les recopieraient sont bloquées ([hooks](hooks.md#protection-des-secrets-bloquant)) |
 | Chaque action sur un site en ligne est confirmée par l'utilisateur | Hook [`confirmer-production`](hooks.md#confirmation-des-actions-sur-un-site-en-ligne-confirmation), même en mode auto |
 | Déploiements automatiques depuis GitHub **coupés** (`vercel.json`) | `vercel link` tente de relier le dépôt : chaque push mettrait alors le site en ligne sans contrôle |
 | Vérification dans un navigateur après chaque déploiement | Un site qui marche en local peut casser en ligne (variable manquante, adresse) |
