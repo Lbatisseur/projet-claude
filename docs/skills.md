@@ -439,6 +439,23 @@ valable 32 jours, adresse servant bien le déploiement livré, aucune faille ; 6
 à jour disponibles, dont 4 majeures (TypeScript 7, ESLint 10, Vitest 5, types de
 Node).
 
+**Sauvegarde de la base** (ajoutée le 2026-11-18, CRM LemanFlow) : l'offre
+gratuite de Supabase ne sauvegarde rien. Si la fiche d'un site en ligne a une ligne
+« Sauvegarde » (commande), `/entretenir` la lance chaque semaine : c'est la seule
+action qu'il fait de lui-même, puisqu'elle ne modifie rien. Pour le CRM :
+`npm run sauvegarde` (copie datée des données hors du dépôt, dans
+`~/Sauvegardes/`, lisible par l'utilisateur seul) et `npm run restaurer`, qui ne
+recharge une copie que dans la base de développement et compare les nombres de
+lignes. Outils : `pg_dump` et `psql` (`brew install libpq`), car
+`supabase db dump` exige Docker. La relecture sécurité a fait ajouter trois garde-fous à la
+restauration : psql exécute tout ce que contient un fichier, y compris des commandes
+sur le Mac (`\!`) ; le script n'accepte donc que les copies du dossier de
+sauvegardes dont chaque ligne vient de pg_dump, et seulement dans une base qui
+porte un repère « dev ». Essais réels : un fichier piégé et une copie placée hors
+du dossier sont refusés, la commande piégée n'est jamais exécutée. Premier essai : une fiche ajoutée après la copie a
+bien disparu à la restauration, et les compteurs d'identifiants restent au-dessus
+des identifiants existants.
+
 **Versions retenues** : la plus récente n'est pas toujours la plus pertinente. Le
 premier bilan proposait 6 mises à jour ; chacune a été essayée sur une copie de la
 démo, palier par palier, avec `/verifier` :

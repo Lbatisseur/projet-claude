@@ -1,6 +1,6 @@
 ---
 name: entretenir
-description: Bilan de santé de tous les sites en ligne — le site répond, son certificat HTTPS n'expire pas, l'adresse sert bien le déploiement livré par /livrer, pas de code en attente, failles connues des dépendances, versions en retard — puis propose les actions. Constate sans rien corriger. À utiliser régulièrement (chaque semaine), quand l'utilisateur demande si ses sites vont bien, ou avant de reprendre le travail sur un site en ligne.
+description: Bilan de santé de tous les sites en ligne — le site répond, son certificat HTTPS n'expire pas, l'adresse sert bien le déploiement livré par /livrer, pas de code en attente, failles connues des dépendances, versions en retard — lance les sauvegardes prévues, puis propose les actions. Constate sans rien corriger. À utiliser régulièrement (chaque semaine), quand l'utilisateur demande si ses sites vont bien, ou avant de reprendre le travail sur un site en ligne.
 argument-hint: "[dossier d'un site, sinon tous les sites en ligne]"
 ---
 
@@ -39,6 +39,18 @@ node "<dossier-de-ce-skill>/scripts/sante.mjs" "<site>"
 
 Code `2` : site jamais livré ou introuvable, montre le message. « Non vérifié »
 n'est jamais un succès : dis ce qui a manqué (connexion, outil non connecté).
+
+### Sauvegarde de la base
+
+Seule action que `/entretenir` lance de lui-même : copier les données, ce qui ne
+modifie rien. Si la section `## En ligne` de la fiche a une ligne « Sauvegarde »
+(commande à lancer dans le dossier du site, par exemple `npm run sauvegarde --
+prod`), lance-la et reprends sa ligne ✅ dans le bilan ; un échec est un ❌ (sans
+copie récente, une panne de l'hébergeur ferait tout perdre). Les copies restent
+hors du dépôt (données personnelles) ; ne les ouvre pas et n'en cite rien.
+
+Une fois par trimestre, propose de vérifier qu'une copie se restaure, dans la
+base de développement seulement (commande « Restauration » de la fiche).
 
 ## 3. Vérifier les ❌
 
