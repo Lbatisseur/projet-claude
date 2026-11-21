@@ -85,6 +85,15 @@ chaque critère d'acceptation de son `CADRAGE.md`. »
   réel de faible montant, remboursé ensuite depuis le tableau de bord Stripe du
   client.
 
+**Outil interne sans compte de test** (le testeur ne peut pas se connecter, et
+aucun mot de passe ne lui est confié, comme pour le CRM) : le testeur ne verrait
+que la page de connexion. Remplace son passage par une vérification légère que tu
+fais toi-même : `curl` répond `200`, les en-têtes de sécurité du `vercel.json`
+sont présents, la page de connexion s'affiche en français dans le navigateur
+(Playwright), et aucune requête ne part vers un service tiers. Puis l'utilisateur
+se connecte lui-même et fait le tour des critères principaux. Les règles d'accès
+sont prouvées par le test des droits du site (contre la base de production).
+
 Un critère ❌ en ligne alors qu'il était ✅ en local signale une différence
 d'environnement (variable manquante, adresse du site) : cherche-la avant tout.
 En mise en ligne, si le site est cassé, propose le retour à la version précédente

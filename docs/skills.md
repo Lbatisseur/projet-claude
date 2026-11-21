@@ -388,6 +388,20 @@ offre gratuite (site de démonstration non commercial).
    erreur JavaScript, ressources en `200`, aucun débordement) et mesure où en est
    le site. La fiche du site note l'adresse, le commit `4799810` et ce résultat.
 
+**Sites Vite et outils internes** (ajouté le 2026-11-21, CRM LemanFlow) :
+- les prérequis refusent la livraison chez Vercel tant que `vercel.json` ne coupe
+  pas les déploiements automatiques à chaque push (`"git": { "deploymentEnabled":
+  false }`) : sans ce réglage, un simple `git push` mettrait le site en ligne en
+  dehors de `/livrer`. 5 tests de plus (24), validés par un sabotage détecté ;
+- la procédure Vercel explique le cas Vite : les variables `VITE_*` sont intégrées
+  au code à la construction, donc publiques ; elles s'ajoutent comme des valeurs
+  non secrètes, et une variable qui active une fonction hors périmètre ne doit pas
+  exister chez Vercel ;
+- pour un outil interne dont le testeur ne peut pas se connecter, la vérification
+  en ligne est faite à la main (réponse, en-têtes, page de connexion, aucune
+  requête vers des tiers), puis l'utilisateur se connecte lui-même ; les règles
+  d'accès sont prouvées par le test des droits contre la base de production.
+
 ### `/entretenir`
 
 Bilan de santé de tous les sites en ligne. Un site vieillit même quand personne n'y

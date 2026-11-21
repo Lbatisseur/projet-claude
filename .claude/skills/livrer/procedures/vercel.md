@@ -40,7 +40,8 @@ npx -y vercel@65.14.0 link --yes --project <identifiant> --cwd "<site>"
 ```
 
 Il crée le projet chez Vercel et le lien local `<site>/.vercel/` (exclu de git par
-le `.gitignore` du site : vérifie-le). Vercel reconnaît Next.js tout seul.
+le `.gitignore` du site : vérifie-le). Vercel reconnaît Next.js et Vite tout seuls
+(un site Vite est construit par `npm run build` et servi depuis `dist/`).
 
 Constaté au premier déploiement (2026-10-26), `link` fait aussi deux choses sans
 le demander :
@@ -56,6 +57,10 @@ le demander :
     "git": { "deploymentEnabled": false }
   }
   ```
+
+  Si le site a déjà un `vercel.json` (en-têtes de sécurité, par exemple), ajoute
+  la clé `git` à côté. Le script des prérequis refuse la livraison tant qu'elle
+  manque.
 
 - **Il écrit un `.env.local`** contenant un jeton temporaire d'accès aux services
   de Vercel (`VERCEL_OIDC_TOKEN`). Le fichier est exclu de git ; ne le lis jamais
@@ -100,6 +105,16 @@ Contrôle ensuite avec `env ls` que chaque variable existe : une commande qui
 
 N'utilise jamais `--value` : la valeur passerait par toi. Changer une variable
 demande de redéployer pour qu'elle soit prise en compte.
+
+**Site Vite** (par exemple le CRM, Vite + Supabase) : les variables `VITE_*` sont
+**intégrées au code au moment de la construction**, et donc lisibles par tout
+visiteur. Elles ne contiennent jamais de secret (`.env.example` du site le
+rappelle) : ce sont des valeurs non secrètes, que tu ajoutes avec `printf`
+comme ci-dessus (adresse du projet Supabase, clé **publique** `sb_publishable_…`
+de la production). Une variable optionnelle qui active une fonction hors
+périmètre (par exemple `VITE_INBOUND_EMAIL`, `VITE_IS_DEMO`) ne doit **pas**
+exister chez Vercel : contrôle-le avec `env ls`. La clé `secret` ou
+`service_role` de Supabase ne va jamais dans une variable `VITE_*`.
 
 ## 4. Déployer
 

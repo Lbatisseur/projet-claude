@@ -4,8 +4,9 @@
 // Usage : prerequis.mjs <dossier-du-site> <recette|mise-en-ligne>
 //
 // Vérifie le cahier des charges (contrôle de /cadrage), les choix de la section
-// « Mise en ligne », l'existence d'une procédure pour l'hébergeur choisi, et que
-// tout le code du site est committé : ce qui part en ligne doit correspondre à un
+// « Mise en ligne », l'existence d'une procédure pour l'hébergeur choisi, pour
+// Vercel que les déploiements automatiques à chaque push sont coupés
+// (vercel.json), et que tout le code du site est committé : ce qui part en ligne doit correspondre à un
 // commit précis, pour savoir exactement ce qui tourne et pouvoir y revenir.
 //
 // Ce script ne contacte aucun service : la connexion à l'hébergeur, /verifier et
@@ -83,6 +84,23 @@ if (decide("Hébergeur")) {
   procedure = PROCEDURES.find(([, motif]) => motif.test(choix["Hébergeur"]))?.[0] ?? null;
   if (procedure) ok(`Procédure de mise en ligne : ${procedure}`);
   else manque(`Aucune procédure pour « ${choix["Hébergeur"]} » : à construire avec l'utilisateur avant de livrer`);
+}
+
+// 3 bis. Vercel : aucun push ne doit mettre le site en ligne en dehors de /livrer
+if (procedure === "vercel") {
+  let config = null;
+  try {
+    config = JSON.parse(readFileSync(join(site, "vercel.json"), "utf8"));
+  } catch {
+    config = null;
+  }
+  if (config?.git?.deploymentEnabled === false) {
+    ok("vercel.json : déploiements automatiques à chaque push coupés");
+  } else {
+    manque(
+      `vercel.json ${config ? "sans" : "absent ou illisible, il faut"} « "git": { "deploymentEnabled": false } » : sinon chaque push mettrait le site en ligne en dehors de /livrer (voir procedures/vercel.md)`,
+    );
+  }
 }
 
 // 4. Mise en ligne : cahier des charges validé par le client

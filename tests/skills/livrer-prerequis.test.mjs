@@ -24,12 +24,14 @@ function modifier(texte, cherche, remplace) {
 
 let n = 0;
 /** Un dépôt git avec un site committé ; `sousDossier` : le site n'est qu'une partie du dépôt. */
-function depot({ cadrage = CADRAGE, sousDossier = false, git = true } = {}) {
+const VERCEL_JSON = '{"git": {"deploymentEnabled": false}}\n';
+function depot({ cadrage = CADRAGE, sousDossier = false, git = true, vercelJson = VERCEL_JSON } = {}) {
   const racine = join(base, `depot-${++n}`);
   const site = sousDossier ? join(racine, "sites", "boutique") : racine;
   mkdirSync(site, { recursive: true });
   writeFileSync(join(site, "package.json"), '{"name":"boutique"}\n');
   if (cadrage !== null) writeFileSync(join(site, "CADRAGE.md"), cadrage);
+  if (vercelJson !== null) writeFileSync(join(site, "vercel.json"), vercelJson);
   if (git) {
     const g = (...args) => spawnSync("git", ["-C", racine, ...args], { encoding: "utf8" });
     g("init", "-q");
@@ -94,6 +96,28 @@ describe("prerequis.mjs : choix de mise en ligne", () => {
   test("hébergeur sans procédure écrite : à construire d'abord", () => {
     const { site } = depot({ cadrage: modifier(CADRAGE, HEBERGEUR, "| Hébergeur | Petit serveur loué (VPS)") });
     assertManque(prerequis(site, "recette"), /❌ Aucune procédure pour « Petit serveur loué \(VPS\) »/);
+  });
+});
+
+describe("prerequis.mjs : vercel.json (déploiements automatiques coupés)", () => {
+  test("absent : pas de livraison", () => {
+    assertManque(prerequis(depot({ vercelJson: null }).site, "recette"), /❌ vercel\.json absent/);
+  });
+  test("présent mais sans le réglage (en-têtes seulement)", () => {
+    const r = prerequis(depot({ vercelJson: '{"headers": []}\n' }).site, "recette");
+    assertManque(r, /❌ vercel\.json sans « "git": \{ "deploymentEnabled": false \} »/);
+  });
+  test("déploiements automatiques laissés actifs", () => {
+    assertManque(
+      prerequis(depot({ vercelJson: '{"git": {"deploymentEnabled": true}}\n' }).site, "recette"),
+      /❌ vercel\.json sans/,
+    );
+  });
+  test("illisible", () => {
+    assertManque(prerequis(depot({ vercelJson: "{ pas du json" }).site, "recette"), /❌ vercel\.json absent ou illisible/);
+  });
+  test("réglage présent : ✅", () => {
+    assert.match(prerequis(depot().site, "recette").stdout, /✅ vercel\.json : déploiements automatiques à chaque push coupés/);
   });
 });
 
