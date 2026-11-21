@@ -4,10 +4,15 @@
 # Usage : serveur.sh start <dossier-du-site>   → affiche « URL http://localhost:<port> »
 #         serveur.sh stop  <dossier-du-site>
 #
-# Le site doit déjà être construit (`next build`, fait par /verifier). Le serveur
-# tourne dans son propre groupe de processus, sur le premier port libre entre 3100
-# et 3199 ; son numéro de processus et son port sont notés dans
-# .claude/state/auditer/<site>.serveur, son journal dans <site>.log.
+# Commande choisie, dans cet ordre :
+#   1. le script npm « serveur:audit » du site s'il existe, lancé avec PORT=<port>
+#      (cas particulier d'un site : par exemple un mode démo sans connexion) ;
+#   2. Next.js : `next start` (le site doit être construit : .next/BUILD_ID) ;
+#   3. Vite : `vite preview` (le site doit être construit : dist/index.html).
+# /verifier construit la version de production. Le serveur tourne dans son propre
+# groupe de processus, sur le premier port libre entre 3100 et 3199 ; son numéro de
+# processus et son port sont notés dans .claude/state/auditer/<site>.serveur, son
+# journal dans <site>.log.
 #
 # Codes de sortie : 0 = fait, 1 = le serveur n'a pas démarré, 2 = usage ou site invalide.
 
@@ -37,7 +42,7 @@ arreter() {
   local pid=""
   [ -f "$fiche" ] && read -r pid _ <"$fiche"
   if en_marche "$pid"; then
-    # Signal à tout le groupe : next start lance des processus enfants
+    # Signal à tout le groupe : next start, npm run… lancent des processus enfants
     kill -TERM -- "-$pid" 2>/dev/null
     for _ in 1 2 3 4 5 6 7 8 9 10; do
       en_marche "$pid" || break
@@ -54,12 +59,21 @@ if [ "$action" = stop ]; then
   exit 0
 fi
 
-# start
-if [ ! -f "$dossier/.next/BUILD_ID" ]; then
-  echo "Aucune version de production construite dans $dossier : lance /verifier d'abord (il exécute next build)." >&2
+# start : quelle commande ?
+if node -e 'const p = require(process.argv[1]); process.exit(p.scripts && p.scripts["serveur:audit"] ? 0 : 1)' "$dossier/package.json" 2>/dev/null; then
+  mode=npm
+  outil=""
+elif [ -f "$dossier/.next/BUILD_ID" ]; then
+  mode=next
+  outil="$dossier/node_modules/.bin/next"
+elif [ -f "$dossier/dist/index.html" ]; then
+  mode=vite
+  outil="$dossier/node_modules/.bin/vite"
+else
+  echo "Aucune version de production construite dans $dossier : lance /verifier d'abord (il construit le site)." >&2
   exit 2
 fi
-if [ ! -x "$dossier/node_modules/.bin/next" ]; then
+if [ ! -d "$dossier/node_modules" ] || { [ -n "$outil" ] && [ ! -x "$outil" ]; }; then
   echo "Dépendances absentes dans $dossier : lance npm install." >&2
   exit 2
 fi
@@ -81,7 +95,11 @@ fi
 
 # set -m : le serveur reçoit son propre groupe de processus, qu'on pourra arrêter d'un coup
 set -m
-(cd "$dossier" && exec nohup node_modules/.bin/next start -p "$port") >"$journal" 2>&1 &
+case $mode in
+  npm) (cd "$dossier" && PORT=$port exec nohup npm run --silent serveur:audit) >"$journal" 2>&1 & ;;
+  next) (cd "$dossier" && exec nohup node_modules/.bin/next start -p "$port") >"$journal" 2>&1 & ;;
+  vite) (cd "$dossier" && exec nohup node_modules/.bin/vite preview --port "$port" --strictPort) >"$journal" 2>&1 & ;;
+esac
 pid=$!
 set +m
 echo "$pid $port" >"$fiche"

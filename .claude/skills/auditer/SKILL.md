@@ -40,8 +40,11 @@ attendus), un agent pourrait relire le mauvais site ou lire ce qu'il ne doit pas
 "<dossier-de-ce-skill>/scripts/serveur.sh" start "<site>"
 ```
 
-Il démarre la version de production sur un port libre et affiche
-`URL http://localhost:<port>`. Code `2` : suis le message (`/verifier`,
+Il démarre la version de production sur un port libre (`next start` pour Next.js,
+`vite preview` pour Vite) et affiche `URL http://localhost:<port>`. Exception : si le
+`package.json` du site a un script `serveur:audit`, c'est lui qui est lancé (avec
+`PORT`) ; la fiche du site dit pourquoi (par exemple un mode démo, quand le testeur ne
+peut pas se connecter). Signale-le dans la synthèse. Code `2` : suis le message (`/verifier`,
 `npm install`). Code `1` : le site ne démarre pas, montre la fin du journal à
 l'utilisateur et arrête-toi.
 

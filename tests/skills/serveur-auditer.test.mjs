@@ -25,18 +25,24 @@ exec sleep 300`,
 };
 
 let n = 0;
-function fauxSite(comportement = "normal", { build = true, dependances = true } = {}) {
+// type : « next » (.next/BUILD_ID + next start -p PORT) ou « vite » (dist/index.html +
+// vite preview --port PORT) ; dans les deux cas le port est le 3e argument.
+function fauxSite(comportement = "normal", { build = true, dependances = true, type = "next" } = {}) {
   const dossier = join(base, `faux-site-${process.pid}-${++n}`);
   mkdirSync(join(dossier, "node_modules/.bin"), { recursive: true });
   writeFileSync(join(dossier, "package.json"), "{}");
-  if (build) {
+  if (build && type === "next") {
     mkdirSync(join(dossier, ".next"));
     writeFileSync(join(dossier, ".next/BUILD_ID"), "test");
   }
+  if (build && type === "vite") {
+    mkdirSync(join(dossier, "dist"));
+    writeFileSync(join(dossier, "dist/index.html"), "<!doctype html>");
+  }
   if (dependances) {
-    const next = join(dossier, "node_modules/.bin/next");
-    writeFileSync(next, `#!/bin/bash\n${COMPORTEMENTS[comportement]}\n`);
-    chmodSync(next, 0o755);
+    const outil = join(dossier, `node_modules/.bin/${type}`);
+    writeFileSync(outil, `#!/bin/bash\n${COMPORTEMENTS[comportement]}\n`);
+    chmodSync(outil, 0o755);
   }
   return dossier;
 }
@@ -110,6 +116,53 @@ describe("serveur.sh : démarrage et arrêt", () => {
     const site = fauxSite();
     assert.equal(lancer("stop", site).status, 0);
     assert.equal(lancer("stop", site).status, 0);
+  });
+});
+
+describe("serveur.sh : sites Vite et script propre au site", () => {
+  test("site Vite construit : vite preview sur le port choisi", () => {
+    const site = fauxSite("normal", { type: "vite" });
+    aArreter.push(site);
+    const r = lancer("start", site);
+    assert.equal(r.status, 0, r.stderr);
+    assert.ok(repond(r.stdout.match(/URL (\S+)/)[1]));
+    lancer("stop", site);
+    const enfant = Number(readFileSync(join(site, "enfant.pid"), "utf8"));
+    assert.ok(!vivant(enfant), "arrêt du groupe entier");
+  });
+
+  test("site Vite jamais construit : renvoie vers /verifier", () => {
+    const r = lancer("start", fauxSite("normal", { type: "vite", build: false }));
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /\/verifier/);
+  });
+
+  test("site Vite sans dépendances : renvoie vers npm install", () => {
+    const r = lancer("start", fauxSite("normal", { type: "vite", dependances: false }));
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /npm install/);
+  });
+
+  test("le script serveur:audit du site passe avant tout, avec PORT", () => {
+    // Construit en Next.js, mais le site demande sa propre commande (mode démo)
+    const site = fauxSite();
+    writeFileSync(
+      join(site, "package.json"),
+      JSON.stringify({
+        scripts: {
+          "serveur:audit":
+            "node -e \"require('http').createServer((q, r) => r.end('ok')).listen(+process.env.PORT)\"",
+        },
+      }),
+    );
+    writeFileSync(join(site, "node_modules/.bin/next"), "#!/bin/bash\nexit 1\n");
+    aArreter.push(site);
+    const r = lancer("start", site);
+    assert.equal(r.status, 0, r.stderr);
+    assert.ok(repond(r.stdout.match(/URL (\S+)/)[1]));
+    const [pid] = fiche(site).split(" ").map(Number);
+    lancer("stop", site);
+    assert.ok(!vivant(pid), "npm et le serveur qu'il lance sont arrêtés");
   });
 });
 

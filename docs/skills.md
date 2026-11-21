@@ -321,6 +321,13 @@ chemin avec espace, erreurs d'usage. Validés par sabotage de 6 façons ; le scr
 ensuite servi pour de vrai à chaque audit du banc d'essai. L'orchestration complète est évaluée sur le banc d'essai de la
 Savonnerie Ondine ([résultats](sous-agents.md#banc-dessai-de-laudit-avant-livraison)).
 
+**Sites Vite et script propre au site** (ajouté le 2026-11-18, CRM LemanFlow) :
+`serveur.sh` démarre aussi un site Vite (`vite preview` sur `dist/`). Un site peut
+imposer sa commande par un script npm `serveur:audit`, lancé avec `PORT` : le CRM y
+sert son mode démo, car le testeur n'a pas de compte et aucun mot de passe ne lui est
+confié ; les règles d'accès sont alors prouvées par le test des droits de la base.
+4 tests de plus (16), validés par 2 sabotages détectés.
+
 ### `/livrer`
 
 Met un site en ligne et le tient à jour. Livrer, ici, ce n'est pas remettre du code
