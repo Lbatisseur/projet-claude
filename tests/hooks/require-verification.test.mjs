@@ -65,6 +65,24 @@ describe("require-verification", () => {
     assert.equal(r.status, 0);
   });
 
+  test("seul le cache de l'outil Supabase (supabase/.temp) a changé : laisse terminer", () => {
+    const r = stop(projet({
+      "sites/boutique/package.json": HIER,
+      [TAMPON]: HIER,
+      "sites/boutique/supabase/.temp/cli-latest": MAINTENANT,
+    }));
+    assert.equal(r.status, 0);
+  });
+
+  test("migration Supabase modifiée après la vérification : bloque", () => {
+    const r = stop(projet({
+      "sites/boutique/package.json": HIER,
+      [TAMPON]: HIER,
+      "sites/boutique/supabase/migrations/20261122_x.sql": MAINTENANT,
+    }));
+    assert.equal(r.status, 2);
+  });
+
   test("plusieurs sites : ne signale que ceux qui sont non vérifiés", () => {
     const r = stop(projet({
       "sites/boutique/package.json": HIER, [TAMPON]: MAINTENANT,
@@ -135,9 +153,9 @@ describe("require-verification : empreinte du site", () => {
     assert.equal(stop(racine).status, 2);
   });
 
-  test(".DS_Store, node_modules, .next et fichiers régénérés : ignorés", () => {
+  test(".DS_Store, node_modules, .next, supabase/.temp et fichiers régénérés : ignorés", () => {
     const racine = siteVerifie();
-    for (const f of ["src/.DS_Store", "node_modules/x/i.js", ".next/b", "next-env.d.ts", "tsconfig.tsbuildinfo"]) {
+    for (const f of ["src/.DS_Store", "node_modules/x/i.js", ".next/b", "next-env.d.ts", "tsconfig.tsbuildinfo", "supabase/.temp/project-ref"]) {
       fichier(racine, `${SITE}/${f}`);
     }
     assert.equal(stop(racine).status, 0);

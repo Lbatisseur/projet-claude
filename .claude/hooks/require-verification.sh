@@ -16,9 +16,10 @@
 # indéfiniment sur une vérification impossible.
 
 # Empreinte d'un site : chemins et tailles de ses fichiers, hors dépendances,
-# builds et fichiers régénérés. Seules les métadonnées sont lues, jamais le contenu.
+# builds, cache de l'outil Supabase (supabase/.temp) et fichiers régénérés.
+# Seules les métadonnées sont lues, jamais le contenu.
 empreinte() {
-  (cd "$1" 2>/dev/null && find . \( -name node_modules -o -name .next -o -name .git \) -prune -o \
+  (cd "$1" 2>/dev/null && find . \( -name node_modules -o -name .next -o -name .git -o -path '*/supabase/.temp' \) -prune -o \
     -type f ! -name next-env.d.ts ! -name '*.tsbuildinfo' ! -name .DS_Store -print0 2>/dev/null |
     xargs -0 stat -f '%z %N' 2>/dev/null | LC_ALL=C sort | shasum -a 256 | cut -d' ' -f1)
 }
@@ -43,7 +44,7 @@ for site in "$root"/sites/*/; do
     continue
   fi
   # Fichiers modifiés après le tampon, hors dépendances, builds et fichiers régénérés
-  changed=$(find "$site" \( -name node_modules -o -name .next -o -name .git \) -prune -o \
+  changed=$(find "$site" \( -name node_modules -o -name .next -o -name .git -o -path '*/supabase/.temp' \) -prune -o \
     -type f -newer "$stamp" ! -name next-env.d.ts ! -name '*.tsbuildinfo' ! -name .DS_Store \
     -print -quit 2>/dev/null)
   [ -n "$changed" ] && { unverified+=("$name"); continue; }

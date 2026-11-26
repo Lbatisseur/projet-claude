@@ -188,7 +188,9 @@ sa dernière vérification réussie.
   une empreinte SHA-256 (seules les métadonnées sont lues, jamais le contenu).
 - À chaque fin de tour, le hook vérifie pour chaque site qu'aucun fichier n'est plus
   récent que le tampon, **et** que l'empreinte n'a pas changé, en ignorant
-  `node_modules`, `.next`, `.DS_Store` et les fichiers régénérés. L'empreinte attrape
+  `node_modules`, `.next`, `.DS_Store`, `supabase/.temp` (cache que l'outil Supabase
+  réécrit à chaque commande, même en simple lecture) et les fichiers régénérés.
+  L'empreinte attrape
   ce que la date ne voit pas : un fichier **supprimé**, **renommé** ou copié avec sa
   date d'origine (`cp -p`), qui peut casser le build sans rendre aucun fichier plus
   récent. Un site sans tampon est considéré comme non vérifié ; un ancien tampon
