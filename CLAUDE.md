@@ -63,3 +63,6 @@ justifié et noté dans la documentation du site concerné.
   sous-agent `relecteur-securite` ; corriger les constats 🔴 et 🟠 avant de conclure.
 - **Documentation** : chaque skill, hook ou sous-agent ajouté est documenté dans
   `docs/` et la feuille de route du `README.md` est mise à jour.
+- **Pièges connus** : `docs/pieges.md` (shell, outils, Next.js, tests, DNS…), à
+  relire avant de diagnostiquer un comportement étrange ; y ajouter chaque nouveau
+  piège général (ceux d'un seul site vont dans sa fiche `CLAUDE.md`).

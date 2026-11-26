@@ -64,6 +64,9 @@ pas, `.ENV.LOCAL` ouvre le fichier `.env.local`. Vérifié avec un fichier canar
   dans un projet il contient le plus souvent une configuration ordinaire ; à l'inverse, un nom de fichier
   secret cité dans du texte (message de commit, `echo`) bloque la commande : écrire
   ce texte dans un fichier avec l'outil d'écriture, puis `git commit -F <fichier>`.
+  De même, du code qui contient un mot suivi de `.key` (`evenement.key`,
+  `entete.key`) ressemble à un fichier de clé : l'écrire avec l'outil d'écriture,
+  ou renommer (`const { key: touche } = evenement`).
 - **Outils MCP** : chaque serveur nomme ses paramètres à sa façon. Le hook examine
   les champs qui désignent un fichier (`path`, `paths`, `file_path`, `filename`…) et
   les URL `file://`, où qu'ils soient dans l'argument ; le texte libre (saisie dans
