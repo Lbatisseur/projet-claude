@@ -124,6 +124,14 @@ Chaque entrée : le symptôme, puis la parade.
 - **Le compte Stripe vu par le serveur MCP n'est pas forcément celui de la clé du
   site** : un code promo créé par le MCP était invisible pour le site. Créer les
   objets de test dans le tableau de bord du compte de la clé.
+- **`stripe login` peut se relier à un autre compte que celui de la clé du site** :
+  `stripe listen` écoute alors le mauvais compte, et aucun avis de paiement n'arrive
+  au site (la commande reste « réservée »). Parade : `stripe listen --api-key <clé
+  du site>` (le secret `whsec_…` est propre à chaque compte : le reprendre avec
+  `--print-secret`).
+- **Une page de paiement Stripe vit 30 minutes au moins** : pour essayer
+  l'expiration sans attendre, `stripe checkout sessions expire <id> --api-key
+  <clé>` envoie le même avis `checkout.session.expired`.
 - **Module officiel de Mondial Relay** : plante avec jQuery 4 (`$.trim`,
   `$.isFunction` supprimés), d'où jQuery 3 figé ; charge Leaflet sans version figée
   et Google Fonts. Les identifiants de test publics de son API (WSI4) répondent
